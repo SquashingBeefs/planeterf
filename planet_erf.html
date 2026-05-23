@@ -406,10 +406,10 @@ const game = document.getElementById('game');
 function layout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  if (isMobile && vh > vw) {
+  if (vh > vw && vw < 768) {
     // Portrait phone: render at a fixed landscape size, scale to fill screen height,
     // crop the sides. This gives a much bigger planet radius and more natural proportions.
-    const GAME_W = 760, GAME_H = 520;
+    const GAME_W = 760, GAME_H = vh;
     W = GAME_W; H = GAME_H;
     const scale = Math.max(vw / GAME_W, vh / GAME_H);
     const offsetX = Math.round((vw - GAME_W * scale) / 2);
