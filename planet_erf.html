@@ -71,7 +71,7 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 1px) scale(0.969792);">
+  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 21px) scale(1.0625);">
     <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px;"></canvas>
     <canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
     <canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
@@ -192,11 +192,11 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Wind and Grass</div>
       </div>
-      <div class="row"><label>Wave Freq</label>   <input type="range" id="sGWWaveFreq" min="5" max="100" step="1" value="50"> <span id="vGWWaveFreq">0.0050</span></div>
+      <div class="row"><label>Wave Freq</label>   <input type="range" id="sGWWaveFreq" min="5" max="100" step="1" value="23"> <span id="vGWWaveFreq">0.0023</span></div>
       <div class="row"><label>Lean Smooth</label> <input type="range" id="sGWLeanSmooth" min="1" max="40" step="1" value="13">  <span id="vGWLeanSmooth">1.3</span></div>
-      <div class="row"><label>Wind Sens</label>   <input type="range" id="sGWWindSens" min="100" max="2000" step="50" value="1150"><span id="vGWWindSens">1150</span></div>
-      <div class="row"><label>Swipe Str</label>   <input type="range" id="sWindSwipeStr" min="1" max="50" step="1" value="8"> <span id="vWindSwipeStr">0.008</span></div>
-      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">→77 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Fast</span></div>
+      <div class="row"><label>Wind Sens</label>   <input type="range" id="sGWWindSens" min="100" max="2000" step="50" value="700"><span id="vGWWindSens">700</span></div>
+      <div class="row"><label>Swipe Str</label>   <input type="range" id="sWindSwipeStr" min="1" max="50" step="1" value="14"> <span id="vWindSwipeStr">0.014</span></div>
+      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">·0 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Neutral</span></div>
       <div class="row"><label>N Amp</label>       <input type="range" id="sSwayAmp0" min="0" max="30" step="1" value="8">  <span id="vSwayAmp0">0.08</span></div>
       <div class="row"><label>S Amp</label>       <input type="range" id="sSwayAmp1" min="0" max="30" step="1" value="13">  <span id="vSwayAmp1">0.13</span></div>
       <div class="row"><label>M Amp</label>       <input type="range" id="sSwayAmp2" min="0" max="30" step="1" value="19"> <span id="vSwayAmp2">0.19</span></div>
@@ -360,11 +360,11 @@ const BLADE_SCALE       = 0.45;            // SVG units → screen px
 const BLADE_ROW_OFFSETS = [-20, -3, 19, 38];  // radial offsets (px): front → back
 const ROW_STAGGER       = [0, 0.12, 0.24, 0.06]; // horizontal offsetFrac shift per row
 // Sway
-let BLADE_WIND_SENS  = 1150; // sway angle per unit of windVel (windVel is ~0.001–0.003)
+let BLADE_WIND_SENS  = 700; // sway angle per unit of windVel (windVel is ~0.001–0.003)
 const BLADE_ROT_SENS   = 160.0; // sway angle per unit of rotation velocity (vel ~0.001–0.006)
 const BLADE_DAMP       = 0.94;  // per-frame velocity damping
 const SWAY_AMP = [0.08, 0.13, 0.19, 0.25]; // sway amplitude per level: neutral, slow, medium, fast
-let GRASS_BASE_FREQ  = 0.005; // base wave cycle frequency with no wind
+let GRASS_BASE_FREQ  = 0.0023; // base wave cycle frequency with no wind
 const SWAY_RATE_CAP    = 0.2;   // max radians/sec grassSway can change — prevents shake from rapid drags or wind bursts
 let LEAN_SMOOTH      = 1.3;   // time constant for lean direction changes (lower = slower/smoother)
 const ROW_WAVE_STEP    = 1.0;   // depth ripple offset per row — back row leads front by this many radians
@@ -568,7 +568,7 @@ let HALO2_SCALE = 1.16;
 let HALO2_ALPHA = 0.08;
 let HALO2_CUT_SCALE = 1.125;
 let HALO2_OFFSET = 14;
-let h2WaveAmp = 18.600187107345143, h2WaveFreq = 17, h2DetAmp = 10, h2DetFreq = 42, h2ExtraFreq = 12;
+let h2WaveAmp = 8.744709544810506, h2WaveFreq = 17, h2DetAmp = 10, h2DetFreq = 42, h2ExtraFreq = 12;
 const h2Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2ExtraPhase = Math.random()*Math.PI*2;
 function halo2WaveAt(a) {
@@ -578,7 +578,7 @@ function halo2WaveAt(a) {
        + Math.sin(a*Math.round(h2DetFreq*1.7)+h2Phase[3])*(h2DetAmp*0.5)
        + Math.sin(a*h2ExtraFreq+h2ExtraPhase)*h2WaveAmp*0.5;
 }
-let h2cWaveAmp = -5.097765447800284, h2cWaveFreq = 17, h2cDetAmp = 8, h2cDetFreq = 38, h2cExtraFreq = 18;
+let h2cWaveAmp = 4.220653385688756, h2cWaveFreq = 17, h2cDetAmp = 8, h2cDetFreq = 38, h2cExtraFreq = 18;
 const h2cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2cExtraPhase = Math.random()*Math.PI*2;
 function halo2CutWaveAt(a) {
@@ -595,7 +595,7 @@ let HALO3_SCALE = 1.105;
 let HALO3_ALPHA = 0.09;
 let HALO3_CUT_SCALE = 1.115;
 let HALO3_OFFSET = 105;
-let h3WaveAmp = 8.157493726751227, h3WaveFreq = 22, h3DetAmp = 8, h3DetFreq = 45, h3ExtraFreq = 14;
+let h3WaveAmp = 27.064431724310893, h3WaveFreq = 22, h3DetAmp = 8, h3DetFreq = 45, h3ExtraFreq = 14;
 const h3Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3ExtraPhase = Math.random()*Math.PI*2;
 function halo3WaveAt(a) {
@@ -605,7 +605,7 @@ function halo3WaveAt(a) {
        + Math.sin(a*Math.round(h3DetFreq*1.7)+h3Phase[3])*(h3DetAmp*0.5)
        + Math.sin(a*h3ExtraFreq+h3ExtraPhase)*h3WaveAmp*0.5;
 }
-let h3cWaveAmp = 14.451326269121475, h3cWaveFreq = 22, h3cDetAmp = 7, h3cDetFreq = 40, h3cExtraFreq = 16;
+let h3cWaveAmp = 25.748605145303443, h3cWaveFreq = 22, h3cDetAmp = 7, h3cDetFreq = 40, h3cExtraFreq = 16;
 const h3cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3cExtraPhase = Math.random()*Math.PI*2;
 function halo3CutWaveAt(a) {
@@ -1138,12 +1138,15 @@ function drawGrassBlades() {
   const _m = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
   function drawBladeRows(fromRow, toRow) {
+    gctx.strokeStyle = '#172614';
+    gctx.lineWidth   = 6.5 * BLADE_SCALE;
+
+    // Collect all blades from all rows in this pass, then sort by true 3D depth
+    // so blades from different rows and tiles never incorrectly overlap.
+    const allBlades = [];
+
     for (let row = fromRow; row >= toRow; row--) {
       const rowR = BLADE_ROW_OFFSETS[row];
-      // Set stroke style once per row — fillStyle changes per tile below
-      gctx.strokeStyle = '#172614';
-      gctx.lineWidth   = 3.2 * BLADE_SCALE;
-
       for (let di = -visHalf; di <= visHalf; di++) {
         const i    = (centerTile + di + TILE_COUNT) % TILE_COUNT;
         const tile = tiles[i];
@@ -1155,9 +1158,7 @@ function drawGrassBlades() {
           tile._fillStyle   = `hsl(${GRASS.lushHue * hf + GRASS.deadHue * (1-hf) | 0},${GRASS.lushSat * hf + GRASS.deadSat * (1-hf) | 0}%,${GRASS.lushLit * hf + GRASS.deadLit * (1-hf) | 0}%)`;
           tile._healthCache = tile.health | 0;
         }
-        // One path per tile — fill then stroke in di order (painter's algorithm)
-        const tilePath = new Path2D();
-        let hasBlades = false;
+        const fillStyle = tile._fillStyle;
         for (const blade of rowBlades) {
           if (blade.growth < 0.5) continue;
           const stageIdx  = Math.min(7, Math.floor(blade.growth));
@@ -1175,19 +1176,28 @@ function drawGrassBlades() {
           const cθ   = Math.cos(θ), sθ = Math.sin(θ);
           const sc   = s * cθ,      ss  = s * sθ;
           const cx   = BLADE_CX[stageIdx];
-          _m.a =  sc; _m.b =  ss; _m.c = -ss; _m.d = sc;
-          _m.e = bx - sc * cx + ss * SVG_BASE_Y;
-          _m.f = by - ss * cx - sc * SVG_BASE_Y;
-          tilePath.addPath(bladePaths[stageIdx], _m);
-          hasBlades = true;
+          allBlades.push({
+            depth:     Math.cos(a) * surfR,  // larger = closer to viewer = draw later
+            stageIdx,
+            ta: sc, tb: ss, tc: -ss, td: sc,
+            te: bx - sc * cx + ss * SVG_BASE_Y,
+            tf: by - ss * cx - sc * SVG_BASE_Y,
+            fillStyle,
+          });
         }
-        if (!hasBlades) continue;
-        // Fill then stroke this tile before moving to the next — outlines stay behind front blades
-        gctx.fillStyle = tile._fillStyle;
-        gctx.fill(tilePath);
-        gctx.stroke(tilePath);
       }
     }
+
+    // Highest-on-screen blades first (largest cos(a)*surfR = top of arc = painted behind lower blades)
+    allBlades.sort((x, y) => y.depth - x.depth);
+
+    for (const b of allBlades) {
+      gctx.setTransform(b.ta, b.tb, b.tc, b.td, b.te, b.tf);
+      gctx.fillStyle = b.fillStyle;
+      gctx.fill(bladePaths[b.stageIdx]);
+      gctx.stroke(bladePaths[b.stageIdx]);
+    }
+
     gctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
@@ -2862,7 +2872,7 @@ function drawTileNumbers() {
 // Outer circle
 let HALO_SCALE   = 1.195;
 let HALO_ALPHA   = 0.13;
-let hWaveAmp     = 21.215024577868306,  hWaveFreq = 29, hDetAmp = 9.5, hDetFreq = 38, hExtraFreq = 15;
+let hWaveAmp     = 22.99035574336424,  hWaveFreq = 29, hDetAmp = 9.5, hDetFreq = 38, hExtraFreq = 15;
 const hPhase     = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hExtraPhase = Math.random()*Math.PI*2;
 function haloWaveAt(a) {
@@ -2876,7 +2886,7 @@ function haloWaveAt(a) {
 // Cutout circle
 let HALO_CUT_SCALE = 1.265;
 let HALO_OFFSET    = 48;
-let hcWaveAmp = 23.854157710606025, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
+let hcWaveAmp = 21.058270777058866, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
 const hcPhase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hcExtraPhase = Math.random()*Math.PI*2;
 function haloCutWaveAt(a) {
@@ -3666,14 +3676,15 @@ function handleTap(sx, sy) {
       return;
     }
   }
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const mid = bPt(i + 0.5, SURF_R + BODY_H + (CAP_H - BODY_H) * 0.5);
-    if (Math.sqrt((sx-mid.x)**2 + (sy-mid.y)**2) < 28) {
-      const t = tiles[i];
-      spawnTileParticles(i, t.type, sx, sy);
-      if (t.type === 0) seedFromTap(i, t);
-      return;
-    }
+  const dx = sx - CX, dy = sy - CY;
+  const clickDist = Math.sqrt(dx * dx + dy * dy);
+  if (clickDist >= R + SURF_R - 15 && clickDist <= R + SURF_R + CAP_H + WAVE_AMP) {
+    let angle = Math.atan2(dx, -dy) - rotation;
+    angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const i = Math.floor(angle / (Math.PI * 2) * TILE_COUNT) % TILE_COUNT;
+    const t = tiles[i];
+    spawnTileParticles(i, t.type, sx, sy);
+    if (t.type === 0) seedFromTap(i, t);
   }
 }
 
@@ -3776,7 +3787,7 @@ let halo2Rotation = 0;  let halo2Vel = 0;
 let halo3Rotation = 0;  let halo3Vel = 0;
 let windVel = 0;
 let playerWindVel = 0, playerWindTarget = 0, windDragging = false;
-let WIND_SWIPE_STR = 0.008; // how much each swipe pixel pushes the wind target
+let WIND_SWIPE_STR = 0.014; // how much each swipe pixel pushes the wind target
 const MAX_WIND = 0.009;    // maximum wind velocity
 const ROT_WIND_FACTOR = 0.008; // per-frame acceleration into wind from planet spin — builds with sustained spinning
 let rotWindVel = 0;
@@ -4107,14 +4118,14 @@ function loop(time) {
   drawDarkHalo2();        // inner dark strata ring (second layer)
   drawDarkHalo();         // inner dark strata ring (first layer)
   drawCoverSpots();       // dark organic blotches — crust only, never over tiles
-  if (_loopFrame & 1) drawCrustDots(); // tiny speckle texture over tiles + strata + body
+  drawCrustDots(); // tiny speckle texture over tiles + strata + body
   drawRocks();            // rocks on top of the dot texture
   drawGroundItems(ctx);   // rubies and bones sitting in the crust
   drawCoverInsetShadow(); // shadow along the wavy crust edge, makes tiles look raised
   drawPlanetShadow();     // large soft shadow on the night side of the planet
   drawGrassBlades();      // individual grass blades + creature (on the separate grass canvas)
   drawTileNumbers();      // debug water/tile numbers (shown when "Show #" is on)
-  if (_loopFrame & 1) drawEvaporation(); // curvy rising lines from water tiles when clouds form
+  drawEvaporation(); // curvy rising lines from water tiles when clouds form
   drawRain();             // falling raindrops
   drawSplash();           // impact splatter
   drawClouds();           // cloud puffs with their own shadow
