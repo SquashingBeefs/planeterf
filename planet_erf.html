@@ -1,11 +1,11 @@
-<html><head>
+﻿<html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Planet Erf</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
   html, body { height: 100%; }
-  body { background: #1055a0; overflow: hidden; -webkit-touch-callout: none; }
+  body { background: #000a14; overflow: hidden; -webkit-touch-callout: none; }
   #wrap {
     position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     height: 100dvh;
@@ -71,13 +71,13 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="game" style="width: 1862px; height: 894px; transform: translate(0px, 4px) scale(0.150376);">
-    <canvas id="c" width="1862" height="894" style="width: 1862px; height: 894px; position: absolute; top: 0px; left: 0px;"></canvas>
-    <canvas id="gc" width="1862" height="894" style="width: 1862px; height: 894px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
-    <canvas id="btf" width="1862" height="894" style="width: 1862px; height: 894px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
+  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 1px) scale(0.969792);">
+    <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px;"></canvas>
+    <canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
+    <canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
     <button id="fsBtn" title="Fullscreen" style="display: block;">⛶</button>
-    <div id="ui" style="">Swipe the Earth to spin it &nbsp;·&nbsp; Swipe the air to move the wind &nbsp;·&nbsp; Squish or double-click clouds to rain</div>
-    <div id="controls" style="">
+    <div id="ui">Swipe the Earth to spin it &nbsp;·&nbsp; Swipe the air to move the wind &nbsp;·&nbsp; Squish or double-click clouds to rain</div>
+    <div id="controls">
       <button onclick="floodTile(0)">Seed</button>
       <button onclick="fullGrassTile()">Grass</button>
       <button id="btnGrow" onclick="boostGrass()" class="">Grow ×10</button>
@@ -90,15 +90,15 @@
       <button onclick="saveDefaults()">Save</button>
       <button onclick="toggleUI()" title="Hide UI">✕</button>
     </div>
-    <button id="btnReveal" onclick="toggleUI()" title="Show UI" style="display: none;">☰</button>
+    <button id="btnReveal" onclick="toggleUI()" title="Show UI">☰</button>
     <div id="left-col" style="display: none;">
     <div id="halo-sliders">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Cloud Halos</div>
         <div class="tab-row">
           <button class="tab" onclick="showTab('cloud','cl1',this)">1</button>
-          <button class="tab active" onclick="showTab('cloud','cl2',this)">2</button>
-          <button class="tab" onclick="showTab('cloud','cl3',this)">3</button>
+          <button class="tab" onclick="showTab('cloud','cl2',this)">2</button>
+          <button class="tab active" onclick="showTab('cloud','cl3',this)">3</button>
         </div>
       </div>
       <div id="cloud-cl1" data-group="cloud" style="display: none;">
@@ -127,7 +127,7 @@
           <div class="row"><label>Extra freq</label> <input type="range" id="sHCEFq" min="0" max="60" step="1" value="20"><span id="vHCEFq">20</span></div>
         </div>
       </div>
-      <div id="cloud-cl2" data-group="cloud">
+      <div id="cloud-cl2" data-group="cloud" style="display: none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
             <button class="tab" onclick="showTab('cl2','outer',this)">Outer</button>
@@ -144,7 +144,7 @@
           <div class="row"><label>Extra freq</label> <input type="range" id="sH2EFq" min="0" max="60" step="1" value="12"><span id="vH2EFq">12</span></div>
         </div>
         <div id="cl2-cut" data-group="cl2">
-          <div class="row"><label>Scale</label>      <input type="range" id="sH2CScale" min="100" max="140" step="0.5" value="114"><span id="vH2CScale">114%</span></div>
+          <div class="row"><label>Scale</label>      <input type="range" id="sH2CScale" min="100" max="140" step="0.5" value="112.5"><span id="vH2CScale">112.5%</span></div>
           <div class="row"><label>Offset</label>     <input type="range" id="sH2Off" min="-300" max="300" step="1" value="14"><span id="vH2Off">14</span></div>
           <div class="row"><label>Amplitude</label>  <input type="range" id="sH2CAmp" min="1" max="60" step="1" value="2"><span id="vH2CAmp">2</span></div>
           <div class="row"><label>Frequency</label>  <input type="range" id="sH2CFreq" min="1" max="40" step="1" value="17"><span id="vH2CFreq">17</span></div>
@@ -153,7 +153,7 @@
           <div class="row"><label>Extra freq</label> <input type="range" id="sH2CEFq" min="0" max="60" step="1" value="18"><span id="vH2CEFq">18</span></div>
         </div>
       </div>
-      <div id="cloud-cl3" data-group="cloud" style="display: none;">
+      <div id="cloud-cl3" data-group="cloud" style="">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
             <button class="tab" onclick="showTab('cl3','outer',this)">Outer</button>
@@ -171,11 +171,11 @@
         </div>
         <div id="cl3-cut" data-group="cl3">
           <div class="row"><label>Scale</label>      <input type="range" id="sH3CScale" min="100" max="140" step="0.5" value="111.5"><span id="vH3CScale">111.5%</span></div>
-          <div class="row"><label>Offset</label>     <input type="range" id="sH3Off" min="-300" max="300" step="1" value="100"><span id="vH3Off">100</span></div>
-          <div class="row"><label>Amplitude</label>  <input type="range" id="sH3CAmp" min="1" max="60" step="1" value="28"><span id="vH3CAmp">28</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sH3CFreq" min="1" max="40" step="1" value="26"><span id="vH3CFreq">26</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sH3CDet" min="0" max="20" step="0.5" value="3.5"><span id="vH3CDet">3.5</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sH3CDFr" min="1" max="80" step="1" value="40"><span id="vH3CDFr">40</span></div>
+          <div class="row"><label>Offset</label>     <input type="range" id="sH3Off" min="-300" max="300" step="1" value="105"><span id="vH3Off">105</span></div>
+          <div class="row"><label>Amplitude</label>  <input type="range" id="sH3CAmp" min="1" max="60" step="1" value="5"><span id="vH3CAmp">5</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sH3CFreq" min="1" max="40" step="1" value="13"><span id="vH3CFreq">13</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sH3CDet" min="0" max="20" step="0.5" value="12.5"><span id="vH3CDet">12.5</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sH3CDFr" min="1" max="80" step="1" value="27"><span id="vH3CDFr">27</span></div>
           <div class="row"><label>Extra freq</label> <input type="range" id="sH3CEFq" min="0" max="60" step="1" value="16"><span id="vH3CEFq">16</span></div>
         </div>
       </div>
@@ -192,15 +192,15 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Wind and Grass</div>
       </div>
-      <div class="row"><label>Wave Freq</label>   <input type="range" id="sGWWaveFreq" min="5" max="100" step="1" value="20"> <span id="vGWWaveFreq">0.0038</span></div>
-      <div class="row"><label>Lean Smooth</label> <input type="range" id="sGWLeanSmooth" min="1" max="40" step="1" value="4">  <span id="vGWLeanSmooth">1.9</span></div>
-      <div class="row"><label>Wind Sens</label>   <input type="range" id="sGWWindSens" min="100" max="2000" step="50" value="600"><span id="vGWWindSens">1100</span></div>
-      <div class="row"><label>Swipe Str</label>   <input type="range" id="sWindSwipeStr" min="1" max="50" step="1" value="10"> <span id="vWindSwipeStr">0.017</span></div>
-      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">→81 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Fast</span></div>
-      <div class="row"><label>N Amp</label>       <input type="range" id="sSwayAmp0" min="0" max="30" step="1" value="5">  <span id="vSwayAmp0">0.08</span></div>
-      <div class="row"><label>S Amp</label>       <input type="range" id="sSwayAmp1" min="0" max="30" step="1" value="7">  <span id="vSwayAmp1">0.11</span></div>
-      <div class="row"><label>M Amp</label>       <input type="range" id="sSwayAmp2" min="0" max="30" step="1" value="10"> <span id="vSwayAmp2">0.15</span></div>
-      <div class="row"><label>F Amp</label>       <input type="range" id="sSwayAmp3" min="0" max="30" step="1" value="12"> <span id="vSwayAmp3">0.25</span></div>
+      <div class="row"><label>Wave Freq</label>   <input type="range" id="sGWWaveFreq" min="5" max="100" step="1" value="50"> <span id="vGWWaveFreq">0.0050</span></div>
+      <div class="row"><label>Lean Smooth</label> <input type="range" id="sGWLeanSmooth" min="1" max="40" step="1" value="13">  <span id="vGWLeanSmooth">1.3</span></div>
+      <div class="row"><label>Wind Sens</label>   <input type="range" id="sGWWindSens" min="100" max="2000" step="50" value="1150"><span id="vGWWindSens">1150</span></div>
+      <div class="row"><label>Swipe Str</label>   <input type="range" id="sWindSwipeStr" min="1" max="50" step="1" value="8"> <span id="vWindSwipeStr">0.008</span></div>
+      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">→77 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Fast</span></div>
+      <div class="row"><label>N Amp</label>       <input type="range" id="sSwayAmp0" min="0" max="30" step="1" value="8">  <span id="vSwayAmp0">0.08</span></div>
+      <div class="row"><label>S Amp</label>       <input type="range" id="sSwayAmp1" min="0" max="30" step="1" value="13">  <span id="vSwayAmp1">0.13</span></div>
+      <div class="row"><label>M Amp</label>       <input type="range" id="sSwayAmp2" min="0" max="30" step="1" value="19"> <span id="vSwayAmp2">0.19</span></div>
+      <div class="row"><label>F Amp</label>       <input type="range" id="sSwayAmp3" min="0" max="30" step="1" value="25"> <span id="vSwayAmp3">0.25</span></div>
     </div>
     </div>
     <div id="right-col" style="display: none;">
@@ -264,9 +264,9 @@
         <div class="row"><label>Width</label><input type="range" id="sIWidth" min="1" max="120" step="1" value="12"><span id="vIWidth">12</span></div>
       </div>
       <div id="shadow-side" data-group="shadow">
-        <div class="row"><label>Alpha</label><input type="range" id="sSideAlpha" min="0" max="100" step="1" value="48"><span id="vSideAlpha">48%</span></div>
-        <div class="row"><label>Width</label><input type="range" id="sSideShift" min="0" max="800" step="10" value="250"><span id="vSideShift">250</span></div>
-        <div class="row"><label>Angle</label><input type="range" id="sSideAngle" min="0" max="300" step="5" value="165"><span id="vSideAngle">1.6</span></div>
+        <div class="row"><label>Alpha</label><input type="range" id="sSideAlpha" min="0" max="100" step="1" value="58"><span id="vSideAlpha">58%</span></div>
+        <div class="row"><label>Width</label><input type="range" id="sSideShift" min="0" max="800" step="10" value="430"><span id="vSideShift">430</span></div>
+        <div class="row"><label>Angle</label><input type="range" id="sSideAngle" min="0" max="300" step="5" value="300"><span id="vSideAngle">3.0</span></div>
       </div>
     </div>
     <div id="dark-halo-sliders">
@@ -360,13 +360,13 @@ const BLADE_SCALE       = 0.45;            // SVG units → screen px
 const BLADE_ROW_OFFSETS = [-20, -3, 19, 38];  // radial offsets (px): front → back
 const ROW_STAGGER       = [0, 0.12, 0.24, 0.06]; // horizontal offsetFrac shift per row
 // Sway
-let BLADE_WIND_SENS  = 600.0; // sway angle per unit of windVel (windVel is ~0.001–0.003)
+let BLADE_WIND_SENS  = 1150; // sway angle per unit of windVel (windVel is ~0.001–0.003)
 const BLADE_ROT_SENS   = 160.0; // sway angle per unit of rotation velocity (vel ~0.001–0.006)
 const BLADE_DAMP       = 0.94;  // per-frame velocity damping
-const SWAY_AMP = [0.05, 0.07, 0.10, 0.12]; // sway amplitude per level: neutral, slow, medium, fast
-let GRASS_BASE_FREQ  = 0.0020; // base wave cycle frequency with no wind
+const SWAY_AMP = [0.08, 0.13, 0.19, 0.25]; // sway amplitude per level: neutral, slow, medium, fast
+let GRASS_BASE_FREQ  = 0.005; // base wave cycle frequency with no wind
 const SWAY_RATE_CAP    = 0.2;   // max radians/sec grassSway can change — prevents shake from rapid drags or wind bursts
-let LEAN_SMOOTH      = 0.4;   // time constant for lean direction changes (lower = slower/smoother)
+let LEAN_SMOOTH      = 1.3;   // time constant for lean direction changes (lower = slower/smoother)
 const ROW_WAVE_STEP    = 1.0;   // depth ripple offset per row — back row leads front by this many radians
 
 const FRICTION      = 0.993;
@@ -397,18 +397,25 @@ const BIRD_MAX   = 16000;
 // CY    = vertical center of the planet — pushed WAY below the screen so only the
 //         top arc is visible. The formula places CY so the planet edge at ±W/2
 //         sits just below the bottom of the screen.
-const NATIVE_W = 1862, NATIVE_H = 894;
+const isMobile = navigator.maxTouchPoints > 0 && Math.min(window.innerWidth, window.innerHeight) < 1024;
+const NATIVE_W = 1920, NATIVE_H = 920;
 let W = NATIVE_W, H = NATIVE_H, R, CX, CY, currentDpr = 1;
+let rockCanvas = null, crustDotCanvas = null, coverSpotsCanvas = null;
+let lastR = null;
 const game = document.getElementById('game');
 function layout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  W = NATIVE_W; H = NATIVE_H;
-  // Scale game to fit viewport, centered, with black bars if needed
-  const scale = Math.min(vw / NATIVE_W, vh / NATIVE_H);
-  const tx = Math.round((vw - NATIVE_W * scale) / 2);
-  const ty = Math.round((vh - NATIVE_H * scale) / 2);
-  game.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  if (isMobile) {
+    W = vw; H = vh;
+    game.style.transform = 'translate(0px, 0px) scale(1)';
+  } else {
+    W = NATIVE_W; H = NATIVE_H;
+    const scale = Math.min(vw / NATIVE_W, vh / NATIVE_H);
+    const tx = Math.round((vw - NATIVE_W * scale) / 2);
+    const ty = Math.round((vh - NATIVE_H * scale) / 2);
+    game.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  }
   canvas.width  = W; canvas.height  = H;
   canvas.style.width  = W + 'px'; canvas.style.height  = H + 'px';
   grassCanvas.width  = W; grassCanvas.height  = H;
@@ -418,8 +425,15 @@ function layout() {
   game.style.width  = W + 'px'; game.style.height  = H + 'px';
   R  = Math.round(675 * W / 760);
   CX = W / 2;
-  // sqrt(R²-(W/2)²) = how far down the center is when the left/right horizon just hits screen edge
-  CY = H * 0.77 + 300 + Math.sqrt(R * R - (W / 2) * (W / 2));
+  // Place planet so its top arc is always visible — on wide screens the horizon sits ~88px
+  // below the screen edge; on narrow/portrait screens it clamps to keep the arc on screen.
+  CY = H * 0.75 + R;
+  if (lastR && R !== lastR) {
+    const scale = R / lastR;
+    for (const c of clouds) c.radius *= scale;
+  }
+  lastR = R;
+  if (rockCanvas) { bakeRockCanvas(); bakeCrustDotCanvas(); bakeCoverSpotsCanvas(); }
 }
 let resizeTimer;
 const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(layout, 120); };
@@ -436,7 +450,7 @@ if (document.documentElement.requestFullscreen) {
   });
 }
 
-let rotation = 0, velocity = 0, lastTime = 0, recentVel = 0;
+let rotation = 0, velocity = 0, lastTime = 0, recentVel = 0, _loopFrame = 0;
 let grassSway = 0, frameNow = 0;
 let grassWindAmp = SWAY_AMP[0], grassWaveFreq = 0.0020;
 let grassPhase = 0; // accumulated wave phase — avoids jumps when grassWaveFreq changes
@@ -552,9 +566,9 @@ const GRING2_PARALLAX = 0.15;
 
 let HALO2_SCALE = 1.16;
 let HALO2_ALPHA = 0.08;
-let HALO2_CUT_SCALE = 1.14;
+let HALO2_CUT_SCALE = 1.125;
 let HALO2_OFFSET = 14;
-let h2WaveAmp = 15.28194644525384, h2WaveFreq = 17, h2DetAmp = 10, h2DetFreq = 42, h2ExtraFreq = 12;
+let h2WaveAmp = 18.600187107345143, h2WaveFreq = 17, h2DetAmp = 10, h2DetFreq = 42, h2ExtraFreq = 12;
 const h2Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2ExtraPhase = Math.random()*Math.PI*2;
 function halo2WaveAt(a) {
@@ -564,7 +578,7 @@ function halo2WaveAt(a) {
        + Math.sin(a*Math.round(h2DetFreq*1.7)+h2Phase[3])*(h2DetAmp*0.5)
        + Math.sin(a*h2ExtraFreq+h2ExtraPhase)*h2WaveAmp*0.5;
 }
-let h2cWaveAmp = 9.05905046349222, h2cWaveFreq = 17, h2cDetAmp = 8, h2cDetFreq = 38, h2cExtraFreq = 18;
+let h2cWaveAmp = -5.097765447800284, h2cWaveFreq = 17, h2cDetAmp = 8, h2cDetFreq = 38, h2cExtraFreq = 18;
 const h2cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2cExtraPhase = Math.random()*Math.PI*2;
 function halo2CutWaveAt(a) {
@@ -580,8 +594,8 @@ const HALO2_PARALLAX = 0.38;
 let HALO3_SCALE = 1.105;
 let HALO3_ALPHA = 0.09;
 let HALO3_CUT_SCALE = 1.115;
-let HALO3_OFFSET = 100;
-let h3WaveAmp = 20.251386541622953, h3WaveFreq = 22, h3DetAmp = 8, h3DetFreq = 45, h3ExtraFreq = 14;
+let HALO3_OFFSET = 105;
+let h3WaveAmp = 8.157493726751227, h3WaveFreq = 22, h3DetAmp = 8, h3DetFreq = 45, h3ExtraFreq = 14;
 const h3Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3ExtraPhase = Math.random()*Math.PI*2;
 function halo3WaveAt(a) {
@@ -591,7 +605,7 @@ function halo3WaveAt(a) {
        + Math.sin(a*Math.round(h3DetFreq*1.7)+h3Phase[3])*(h3DetAmp*0.5)
        + Math.sin(a*h3ExtraFreq+h3ExtraPhase)*h3WaveAmp*0.5;
 }
-let h3cWaveAmp = 38.50238546102071, h3cWaveFreq = 22, h3cDetAmp = 7, h3cDetFreq = 40, h3cExtraFreq = 16;
+let h3cWaveAmp = 14.451326269121475, h3cWaveFreq = 22, h3cDetAmp = 7, h3cDetFreq = 40, h3cExtraFreq = 16;
 const h3cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3cExtraPhase = Math.random()*Math.PI*2;
 function halo3CutWaveAt(a) {
@@ -1049,7 +1063,7 @@ function drawGroundItems(c) {
         const ray = 3;
         c.save();
         c.translate(2, -rh * 0.65);
-        c.globalAlpha = a * (0.2 + 0.35 * (0.5 + 0.5 * Math.sin(frameNow * 0.002)));
+        c.globalAlpha = a * 0.55;
         c.strokeStyle = '#ffffff';
         c.lineCap = 'round';
         c.lineWidth = 1;
@@ -1107,62 +1121,85 @@ function drawGrassBlades() {
   gctx.clearRect(0, 0, W, H);
   gctx.strokeStyle = '#172614';
 
+  // Clip to outside the planet body — prevents blade bases from deep-sunken tiles
+  // appearing above the cap surface of neighboring high-amplitude tiles.
+  // Uses a simple fixed circle at R+SURF_R (the floor of the cap zone); anything
+  // below that is inside the planet body and invisible on the planet canvas anyway.
+  gctx.save();
+  gctx.beginPath();
+  gctx.rect(0, 0, W, H);
+  gctx.arc(CX, CY, R + SURF_R, 0, Math.PI * 2);
+  gctx.clip('evenodd');
+
   const centerTile = (Math.round(-rotation / (Math.PI * 2) * TILE_COUNT) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
-  const visHalf    = 40; // visible arc is ~17 tiles wide; 40 gives ample buffer
+  const visHalf    = 28; // visible arc is ~17 tiles wide; 28 gives ample buffer
+
+  // Reusable transform object — Path2D.addPath copies values, so mutation is safe
+  const _m = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
   function drawBladeRows(fromRow, toRow) {
     for (let row = fromRow; row >= toRow; row--) {
       const rowR = BLADE_ROW_OFFSETS[row];
+      // Set stroke style once per row — fillStyle changes per tile below
+      gctx.strokeStyle = '#172614';
+      gctx.lineWidth   = 3.2 * BLADE_SCALE;
+
       for (let di = -visHalf; di <= visHalf; di++) {
         const i    = (centerTile + di + TILE_COUNT) % TILE_COUNT;
         const tile = tiles[i];
         if (tile.type !== 0) continue;
         const rowBlades = tile.bladesByRow[row];
         if (rowBlades.length === 0) continue;
-        // Rebuild fill string only when health changes by a whole unit
         if ((tile.health | 0) !== tile._healthCache) {
-          const hf  = tile.health / 100;
+          const hf = tile.health / 100;
           tile._fillStyle   = `hsl(${GRASS.lushHue * hf + GRASS.deadHue * (1-hf) | 0},${GRASS.lushSat * hf + GRASS.deadSat * (1-hf) | 0}%,${GRASS.lushLit * hf + GRASS.deadLit * (1-hf) | 0}%)`;
           tile._healthCache = tile.health | 0;
         }
-        gctx.fillStyle = tile._fillStyle;
+        // One path per tile — fill then stroke in di order (painter's algorithm)
+        const tilePath = new Path2D();
+        let hasBlades = false;
         for (const blade of rowBlades) {
           if (blade.growth < 0.5) continue;
           const stageIdx  = Math.min(7, Math.floor(blade.growth));
           const tileFrac  = i + blade.offsetFrac + blade.lateralVar;
           const tileAngle = (tileFrac / TILE_COUNT) * Math.PI * 2;
-          const surfR     = R + SURF_R + CAP_H * 0.5 + waveAt(tileAngle) + rowR + blade.radialVar;
+          const waveIdx   = ((Math.round(tileFrac) % TILE_COUNT) + TILE_COUNT) % TILE_COUNT;
+          const surfR     = R + SURF_R + CAP_H * 0.5 + wave[waveIdx] + rowR + blade.radialVar;
           const a         = tileAngle + rotation;
           const bx        = CX + Math.sin(a) * surfR;
           const by        = CY - Math.cos(a) * surfR;
           if (bx < -20 || bx > W + 20 || by > H + 60) continue;
-          // Each blade column (unique tileFrac) gets its own wave phase; rows at same x position share sway
           const sway = grassSway + (noise1D(grassPhase + tileFrac * 0.12) * 2 - 1) * grassWindAmp;
           const s    = BLADE_SCALE * blade.scaleVar;
           const θ    = a + sway;
           const cθ   = Math.cos(θ), sθ = Math.sin(θ);
           const sc   = s * cθ,      ss  = s * sθ;
           const cx   = BLADE_CX[stageIdx];
-          gctx.setTransform(sc, ss, -ss, sc,
-            bx - sc * cx + ss * SVG_BASE_Y,
-            by - ss * cx - sc * SVG_BASE_Y);
-          gctx.lineWidth = 1.5 / s;
-          gctx.fill(bladePaths[stageIdx]);
-          gctx.stroke(bladePaths[stageIdx]);
+          _m.a =  sc; _m.b =  ss; _m.c = -ss; _m.d = sc;
+          _m.e = bx - sc * cx + ss * SVG_BASE_Y;
+          _m.f = by - ss * cx - sc * SVG_BASE_Y;
+          tilePath.addPath(bladePaths[stageIdx], _m);
+          hasBlades = true;
         }
+        if (!hasBlades) continue;
+        // Fill then stroke this tile before moving to the next — outlines stay behind front blades
+        gctx.fillStyle = tile._fillStyle;
+        gctx.fill(tilePath);
+        gctx.stroke(tilePath);
       }
     }
-    gctx.setTransform(1, 0, 0, 1, 0, 0); // reset before creature/butterflies draw
+    gctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   // Rows 3+2 behind creature; rows 1+0 in front of creature
   drawBladeRows(BLADE_ROW_OFFSETS.length - 1, 2);
   drawCreature(gctx);
   drawBladeRows(1, 0);
+  gctx.restore(); // remove surface clip
 }
 
 function updateGrassSway(dtSec) {
-  const rawWind  = windVel + playerWindVel;
+  const rawWind  = windVel + playerWindVel + rotDriftWind;
   const windPct  = Math.min(100, Math.abs(rawWind) / MAX_WIND * 100);
 
   // Smooth the wind percentage (~0.8s) so number and level stay in sync
@@ -1194,7 +1231,10 @@ function updateGrassSway(dtSec) {
     windEl.textContent = dir + Math.round(windMagSmoothed) + ' ';
   }
   grassWindSmoothed += (rawWind - grassWindSmoothed) * Math.min(1, dtSec * LEAN_SMOOTH);
-  const leanTarget = Math.max(-0.9, Math.min(0.9, grassWindSmoothed * BLADE_WIND_SENS));
+  const windLean  = Math.max(-0.9, Math.min(0.9, grassWindSmoothed * BLADE_WIND_SENS));
+  const spinFrac  = Math.min(1, Math.abs(velocity) / 0.004); // 0 = stopped, 1 = actively spinning
+  const rotLean   = Math.max(-0.9, Math.min(0.9, -velocity * BLADE_ROT_SENS)); // opposite to spin direction
+  const leanTarget = rotLean * spinFrac + windLean * (1 - spinFrac);
   grassSway += (leanTarget - grassSway) * Math.min(1, dtSec * 2.0);
 
   grassPhase += grassWaveFreq * dtSec * 1000; // advance phase smoothly — ×1000 keeps same speed as original frameNow*freq
@@ -1439,6 +1479,7 @@ const BTF_SPOTS = [
 ];
 const butterflies   = [];
 let btfSpawnTimer   = 800;
+const tileParticles = [];
 
 function spawnButterfly(anyAngle = false) {
   const goRight    = Math.random() < 0.5;
@@ -1467,6 +1508,7 @@ function spawnButterfly(anyAngle = false) {
     burstTimer:   0,
     burstCooldown: 2000 + Math.random() * 5000,
     extraRadius:  0,
+    noLand:       Math.random() < 0.5,
     landState:    'free',
     landCooldown: 8000 + Math.random() * 15000,
     landTimer:    0,
@@ -1506,7 +1548,7 @@ function updateButterflies(dt) {
       b.angle = ((b.angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
       continue;
     }
-    if (b.landCooldown > 0) {
+    if (b.noLand || b.landCooldown > 0) {
       b.landCooldown -= dt;
     } else {
       const bx = CX + Math.sin(b.angle) * b.radius;
@@ -2246,9 +2288,9 @@ function drawPlanetShadow() {
 let INSET_BLUR  = 12;
 let INSET_ALPHA = 0.7;
 let INSET_WIDTH = 12;
-let SIDE_ALPHA  = 0.48;
-let SIDE_SHIFT  = 250;
-let SIDE_ANGLE  = 1.65;
+let SIDE_ALPHA  = 0.58;
+let SIDE_SHIFT  = 430;
+let SIDE_ANGLE  = 3;
 document.getElementById('sIBlur').addEventListener('input', e => {
   INSET_BLUR = +e.target.value; document.getElementById('vIBlur').textContent = INSET_BLUR;
 });
@@ -2537,9 +2579,8 @@ function bakeCreatureLegFrame(a1, a2) {
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
-// Pre-bake all rocks to an offscreen canvas once at startup.
-// drawRocks() then costs a single drawImage() + clip path per frame.
-const rockCanvas = (() => {
+// Pre-bake all rocks to an offscreen canvas. Called once at startup and again on orientation change.
+function bakeRockCanvas() {
   const dotR = Math.ceil(R + SURF_R + CAP_H + 80);
   const oc   = document.createElement('canvas');
   oc.width   = oc.height = dotR * 2;
@@ -2573,8 +2614,9 @@ const rockCanvas = (() => {
     octx.fill(darkPath);
   }
   octx.setTransform(1, 0, 0, 1, 0, 0);
-  return { canvas: oc, dotR };
-})();
+  rockCanvas = { canvas: oc, dotR };
+}
+bakeRockCanvas();
 
 function drawRocks() {
   const { canvas, dotR } = rockCanvas;
@@ -2603,13 +2645,13 @@ function drawRocks() {
 // ── CRUST DOT TEXTURE ────────────────────────────────────────────────────────
 // Pre-rendered once to an offscreen canvas. Each frame costs one drawImage()
 // call with a rotation transform — zero per-dot overhead at runtime.
-const crustDotCanvas = (() => {
+function bakeCrustDotCanvas() {
   const dotR = Math.ceil(R + SURF_R + CAP_H + 80);
   const oc   = document.createElement('canvas');
   oc.width   = oc.height = dotR * 2;
   const octx = oc.getContext('2d');
 
-  const dotMinR = dotR * 0.55; // dots only appear in outer 45% of planet radius
+  const dotMinR = dotR * 0.55;
   octx.fillStyle = 'rgba(0,0,0,0.25)';
   for (let i = 0; i < 5000; i++) {
     const a = Math.random() * Math.PI * 2;
@@ -2628,11 +2670,12 @@ const crustDotCanvas = (() => {
                   dotR - Math.cos(a) * r - s / 2, s, s);
   }
 
-  return { canvas: oc, dotR };
-})();
+  crustDotCanvas = { canvas: oc, dotR };
+}
+bakeCrustDotCanvas();
 
 // CoverSpots baked separately so they can be clipped to the crust only, never over tiles
-const coverSpotsCanvas = (() => {
+function bakeCoverSpotsCanvas() {
   const dotR = Math.ceil(R + SURF_R + CAP_H + 80);
   const oc   = document.createElement('canvas');
   oc.width   = oc.height = dotR * 2;
@@ -2646,8 +2689,9 @@ const coverSpotsCanvas = (() => {
     octx.fill(sp.path2D);
   }
   octx.setTransform(1, 0, 0, 1, 0, 0);
-  return { canvas: oc, dotR };
-})();
+  coverSpotsCanvas = { canvas: oc, dotR };
+}
+bakeCoverSpotsCanvas();
 
 function drawCrustDots() {
   const { canvas, dotR } = crustDotCanvas;
@@ -2775,6 +2819,19 @@ function drawCoverInsetShadow() {
 // Drawn on the grass canvas (gctx) so it sits above the grass layer
 function drawTileNumbers() {
   if (!showNumbers) return;
+  // FPS counter — top-left corner
+  const fps = Math.round(_fpsAvg);
+  const fpsColor = fps >= 50 ? '#7f7' : fps >= 30 ? '#ff7' : '#f77';
+  gctx.save();
+  gctx.font = 'bold 16px monospace';
+  gctx.textAlign = 'left';
+  gctx.textBaseline = 'top';
+  gctx.fillStyle = 'rgba(0,0,0,0.55)';
+  gctx.fillRect(8, 8, 80, 24);
+  gctx.fillStyle = fpsColor;
+  gctx.fillText(`FPS: ${fps}`, 14, 12);
+  gctx.restore();
+
   gctx.font = 'bold 14px monospace';
   gctx.textAlign = 'center';
   gctx.textBaseline = 'middle';
@@ -2805,7 +2862,7 @@ function drawTileNumbers() {
 // Outer circle
 let HALO_SCALE   = 1.195;
 let HALO_ALPHA   = 0.13;
-let hWaveAmp     = 10.580689994382478,  hWaveFreq = 29, hDetAmp = 9.5, hDetFreq = 38, hExtraFreq = 15;
+let hWaveAmp     = 21.215024577868306,  hWaveFreq = 29, hDetAmp = 9.5, hDetFreq = 38, hExtraFreq = 15;
 const hPhase     = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hExtraPhase = Math.random()*Math.PI*2;
 function haloWaveAt(a) {
@@ -2819,7 +2876,7 @@ function haloWaveAt(a) {
 // Cutout circle
 let HALO_CUT_SCALE = 1.265;
 let HALO_OFFSET    = 48;
-let hcWaveAmp = 13.225652952729632, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
+let hcWaveAmp = 23.854157710606025, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
 const hcPhase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hcExtraPhase = Math.random()*Math.PI*2;
 function haloCutWaveAt(a) {
@@ -3130,6 +3187,17 @@ function cloudAtPoint(sx, sy) {
 
 // ── CONTROLS ──────────────────────────────────────────────────────────────────
 let showNumbers = false;
+// FPS tracking — rolling average over last 60 frames
+const _fpsSamples = new Float32Array(60);
+let _fpsIdx = 0, _fpsAvg = 60, _fpsPrev = 0;
+function tickFps(now) {
+  if (_fpsPrev > 0) {
+    _fpsSamples[_fpsIdx++ % 60] = 1000 / (now - _fpsPrev);
+    let sum = 0; for (let i = 0; i < 60; i++) sum += _fpsSamples[i];
+    _fpsAvg = sum / 60;
+  }
+  _fpsPrev = now;
+}
 function toggleNumbers() {
   showNumbers = !showNumbers;
   document.getElementById('btnNums').classList.toggle('active', showNumbers);
@@ -3178,6 +3246,111 @@ function fullGrassTile() {
     }
   }
 }
+// ── TILE TAP PARTICLES & SEEDING ──────────────────────────────────────────────
+function spawnTileParticles(tileIdx, tileType, sx, sy) {
+  const dx = sx - CX, dy = sy - CY, dist = Math.hypot(dx, dy);
+  const nx = dx / dist, ny = dy / dist; // outward normal
+  const tx = -ny,       ty =  nx;       // surface tangent
+  const GRAV = 0.00018; // gravity toward planet center (px/ms²)
+  const palettes = [
+    ['#4a8c25','#5daa2e','#3d6e1a','#7ab648','#6aaa30'], // grass greens
+    ['#8B5E3C','#7a4a28','#A07850','#6B3C1E','#c09060'], // dirt browns
+    ['#5B7FD4','#3A9AE8','#8DC7FF','#4a6cc0','#70aae0'], // water blues
+  ];
+  const pal   = palettes[tileType] || palettes[0];
+  const count = tileType === 0 ? 16 : 11;
+  for (let i = 0; i < count; i++) {
+    const isLine  = tileType === 0 && i < 5;
+    const lateral = (Math.random() - 0.5) * 1.2;
+    const speed   = 0.07 + Math.random() * 0.13;
+    const life    = 500 + Math.random() * 550;
+    tileParticles.push({
+      x:    sx + tx * (Math.random() - 0.5) * 20,
+      y:    sy + ty * (Math.random() - 0.5) * 20,
+      vx:   (nx + tx * lateral) * speed,
+      vy:   (ny + ty * lateral) * speed,
+      gx:   -nx * GRAV, gy: -ny * GRAV,
+      life, maxLife: life,
+      size: 2 + Math.random() * 2.5,
+      color: pal[Math.floor(Math.random() * pal.length)],
+      isLine,
+    });
+  }
+}
+
+function seedFromTap(tileIdx, tile) {
+  // Health has a quadratic effect so low health is much worse
+  const healthFactor = Math.pow(tile.health / 100, 2);
+  const grassFactor  = tile.gLevel / 100;
+  const strength     = grassFactor * healthFactor; // 0–1
+  const radius       = strength > 0.6 ? 2 : 1;    // always reach adjacent tiles
+
+  for (let d = -radius; d <= radius; d++) {
+    const ni = (tileIdx + d + TILE_COUNT) % TILE_COUNT;
+    const nt = tiles[ni];
+    // Adjacent tiles get fewer blades; outer ring even fewer
+    const distScale = d === 0 ? 1 : Math.abs(d) === 1 ? 0.45 : 0.2;
+    const blades = d === 0
+      ? Math.max(1, Math.round(strength * 4))           // center: always at least 1
+      : Math.round(strength * 3 * distScale);           // adjacent: can be 0 at low health
+
+    if (blades === 0) continue;
+
+    if (nt.type === 1 && strength > 0.15) { // only convert dirt at decent health
+      nt.type = 0; nt.health = 25 + strength * 55; nt.deadTimer = 0;
+    }
+    if (nt.type !== 0) continue;
+    for (let b = 0; b < blades; b++) {
+      const row = Math.floor(Math.random() * BLADE_ROW_OFFSETS.length);
+      if (nt.bladesByRow[row].length < MAX_BLADES) {
+        nt.bladesByRow[row].push({
+          offsetFrac:  pickBladeFrac(nt.bladesByRow[row], ROW_STAGGER[row]),
+          growth:      1,
+          growthRate:  GROW_MIN + Math.random() * (GROW_MAX - GROW_MIN),
+          growDelay:   0,
+          scaleVar:    0.8 + Math.random() * 0.4,
+          lateralVar:  (Math.random() - 0.5) * 0.06,
+          radialVar:   (Math.random() - 0.5) * 8,
+          swayPhase:   Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    for (const rowArr of nt.bladesByRow) for (const b of rowArr) b.growDelay = 0;
+  }
+}
+
+function updateDrawTileParticles(dt) {
+  if (!tileParticles.length) return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (let i = tileParticles.length - 1; i >= 0; i--) {
+    const p = tileParticles[i];
+    p.life -= dt;
+    if (p.life <= 0) { tileParticles.splice(i, 1); continue; }
+    const prevX = p.x, prevY = p.y;
+    p.vx += p.gx * dt; p.vy += p.gy * dt;
+    p.x  += p.vx * dt; p.y  += p.vy * dt;
+    const t = p.life / p.maxLife;
+    const a = Math.min(1, t * 6) * t;
+    ctx.globalAlpha = a;
+    ctx.fillStyle   = p.color;
+    ctx.strokeStyle = p.color;
+    if (p.isLine) {
+      ctx.beginPath();
+      ctx.lineWidth = p.size * 0.7;
+      ctx.moveTo(prevX, prevY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(0.5, p.size * t), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 function rainTiles() {
   const top = ((Math.round((-rotation / (Math.PI * 2)) * TILE_COUNT)) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
   for (let d = -2; d <= 2; d++) {
@@ -3416,6 +3589,10 @@ function saveDefaults() {
     ['sH3CDet',    'h3cDetAmp',          h3cDetAmp],
     ['sH3CDFr',    'h3cDetFreq',         h3cDetFreq],
     ['sH3CEFq',    'h3cExtraFreq',       h3cExtraFreq],
+    ['sGWWaveFreq',   'GRASS_BASE_FREQ',  GRASS_BASE_FREQ],
+    ['sGWLeanSmooth', 'LEAN_SMOOTH',      LEAN_SMOOTH],
+    ['sGWWindSens',   'BLADE_WIND_SENS',  BLADE_WIND_SENS],
+    ['sWindSwipeStr', 'WIND_SWIPE_STR',   WIND_SWIPE_STR],
   ];
 
   let html = document.documentElement.outerHTML;
@@ -3429,10 +3606,23 @@ function saveDefaults() {
         `$1${el.value}$2`
       );
     }
-    // Update the JS let declaration
+    // Update the JS declaration — handles both `let x = n` and `, x = n` (multi-var let)
     html = html.replace(
-      new RegExp(`(let\\s+${varName}\\s*=\\s*)[-\\d.]+`),
+      new RegExp(`((?:let +|, *)${varName}\\s*=\\s*)[-\\d.]+`),
       `$1${jsVal}`
+    );
+  }
+
+  // SWAY_AMP is a const array, handle separately
+  html = html.replace(
+    /const SWAY_AMP = \[[^\]]+\]/,
+    `const SWAY_AMP = [${SWAY_AMP.map(v => +v.toFixed(4)).join(', ')}]`
+  );
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('sSwayAmp' + i);
+    if (el) html = html.replace(
+      new RegExp(`(id="sSwayAmp${i}"[^>]*value=")[^"]*(")`),
+      `$1${el.value}$2`
     );
   }
 
@@ -3480,8 +3670,8 @@ function handleTap(sx, sy) {
     const mid = bPt(i + 0.5, SURF_R + BODY_H + (CAP_H - BODY_H) * 0.5);
     if (Math.sqrt((sx-mid.x)**2 + (sy-mid.y)**2) < 28) {
       const t = tiles[i];
-      t.type = (t.type + 1) % 3;
-      if (t.type === 2) t.water = 100;
+      spawnTileParticles(i, t.type, sx, sy);
+      if (t.type === 0) seedFromTap(i, t);
       return;
     }
   }
@@ -3491,21 +3681,31 @@ function handleTap(sx, sy) {
 // Creates a vignette that frames the scene and hides the hard canvas border.
 function drawSideShadows() {
   if (SIDE_ALPHA <= 0) return;
+  const tilt    = SIDE_ANGLE * 0.1;
+  const overflow = H * 2;
+  const rectW   = SIDE_SHIFT * 6;
+  const outset  = SIDE_SHIFT; // push outer edge this far off-screen
+
+  // Left — rotate around left-center so top leans inward
   ctx.save();
-  const blur = Math.max(1, Math.round(SIDE_SHIFT * 0.4));
-  const ext  = SIDE_SHIFT * SIDE_ANGLE; // top edge is wider than the bottom
-  ctx.filter    = `blur(${blur}px)`;
-  ctx.fillStyle = `rgba(0,0,0,${SIDE_ALPHA})`;
-  // Left: wider at top (near sun), narrows toward bottom corner
-  ctx.beginPath();
-  ctx.moveTo(-blur * 3, 0); ctx.lineTo(SIDE_SHIFT + ext, 0);
-  ctx.lineTo(SIDE_SHIFT, H); ctx.lineTo(-blur * 3, H);
-  ctx.closePath(); ctx.fill();
-  // Right: mirror
-  ctx.beginPath();
-  ctx.moveTo(W - SIDE_SHIFT - ext, 0); ctx.lineTo(W + blur * 3, 0);
-  ctx.lineTo(W + blur * 3, H); ctx.lineTo(W - SIDE_SHIFT, H);
-  ctx.closePath(); ctx.fill();
+  ctx.translate(0, H / 2);
+  ctx.rotate(tilt);
+  const gL = ctx.createLinearGradient(0, 0, SIDE_SHIFT, 0);
+  gL.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`);
+  gL.addColorStop(1, `rgba(0,0,0,0)`);
+  ctx.fillStyle = gL;
+  ctx.fillRect(-outset, -H / 2 - overflow, rectW, H + overflow * 2);
+  ctx.restore();
+
+  // Right — mirror
+  ctx.save();
+  ctx.translate(W, H / 2);
+  ctx.rotate(-tilt);
+  const gR = ctx.createLinearGradient(0, 0, -SIDE_SHIFT, 0);
+  gR.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`);
+  gR.addColorStop(1, `rgba(0,0,0,0)`);
+  ctx.fillStyle = gR;
+  ctx.fillRect(-rectW, -H / 2 - overflow, rectW + outset, H + overflow * 2);
   ctx.restore();
 }
 
@@ -3576,9 +3776,11 @@ let halo2Rotation = 0;  let halo2Vel = 0;
 let halo3Rotation = 0;  let halo3Vel = 0;
 let windVel = 0;
 let playerWindVel = 0, playerWindTarget = 0, windDragging = false;
-let WIND_SWIPE_STR = 0.01; // how much each swipe pixel pushes the wind target
+let WIND_SWIPE_STR = 0.008; // how much each swipe pixel pushes the wind target
 const MAX_WIND = 0.009;    // maximum wind velocity
+const ROT_WIND_FACTOR = 0.008; // per-frame acceleration into wind from planet spin — builds with sustained spinning
 let rotWindVel = 0;
+let rotDriftWind = 0; // gentle wind created by spinning the planet
 let lastInteractionTime = 0; // ms timestamp of last user input
 
 // ── CREATURES ─────────────────────────────────────────────────────────────────
@@ -3770,6 +3972,8 @@ function drawCreature(c) {
 // ── LOOP ──────────────────────────────────────────────────────────────────────
 function loop(time) {
   requestAnimationFrame(loop);
+  tickFps(time);
+  _loopFrame = (_loopFrame + 1) | 0;
   const dt = Math.min(time - lastTime, 50);
   lastTime = time;
   velocity *= FRICTION;
@@ -3784,6 +3988,9 @@ function loop(time) {
   velocity = Math.max(-MAX_VEL, Math.min(MAX_VEL, velocity));
   rotWindVel += (velocity * 0.4 - rotWindVel) * 0.02;
   rotWindVel *= 0.995;
+  rotDriftWind += rotWindVel * ROT_WIND_FACTOR; // accumulates while spinning
+  rotDriftWind = Math.max(-MAX_WIND, Math.min(MAX_WIND, rotDriftWind));
+  rotDriftWind *= 0.993; // fades ~2s after spinning stops
   if (Math.abs(velocity) < MIN_VEL) velocity = 0;
   rotation += velocity;
   sinRot = Math.sin(rotation); cosRot = Math.cos(rotation);
@@ -3807,7 +4014,7 @@ function loop(time) {
   const _windMax  = MAX_WIND * (dt / 1000);
   playerWindVel  += Math.max(-_windMax, Math.min(_windMax, _windStep));
   playerWindVel  *= 0.9985;
-  const totalWind = windVel + playerWindVel;
+  const totalWind = windVel + playerWindVel + rotDriftWind;
   haloVel  += (totalWind * 0.18      - haloVel)  * 0.012;
   haloVel  *= 0.9980;
   haloVel   = Math.max(-0.01, Math.min(0.006, haloVel));
@@ -3900,17 +4107,18 @@ function loop(time) {
   drawDarkHalo2();        // inner dark strata ring (second layer)
   drawDarkHalo();         // inner dark strata ring (first layer)
   drawCoverSpots();       // dark organic blotches — crust only, never over tiles
-  drawCrustDots();        // tiny speckle texture over tiles + strata + body
+  if (_loopFrame & 1) drawCrustDots(); // tiny speckle texture over tiles + strata + body
   drawRocks();            // rocks on top of the dot texture
   drawGroundItems(ctx);   // rubies and bones sitting in the crust
   drawCoverInsetShadow(); // shadow along the wavy crust edge, makes tiles look raised
   drawPlanetShadow();     // large soft shadow on the night side of the planet
   drawGrassBlades();      // individual grass blades + creature (on the separate grass canvas)
   drawTileNumbers();      // debug water/tile numbers (shown when "Show #" is on)
-  drawEvaporation();      // curvy rising lines from water tiles when clouds form
+  if (_loopFrame & 1) drawEvaporation(); // curvy rising lines from water tiles when clouds form
   drawRain();             // falling raindrops
   drawSplash();           // impact splatter
   drawClouds();           // cloud puffs with their own shadow
+  updateDrawTileParticles(dt); // click particles (dots/lines from tile taps)
   drawSideShadows();      // dark vignette wedges on left and right edges
   drawButterflies();      // butterflies on top of everything
 }
@@ -3947,4 +4155,42 @@ loop(performance.now());
 </script>
 
 
-</body></html>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+<div data-lastpass-root="" style="position: absolute !important; top: 0px !important; left: 0px !important; height: 0px !important; width: 0px !important; display: initial !important;"></div></body></html>
