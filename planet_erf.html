@@ -2,6 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Planet Erf</title>
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
   html, body { height: 100%; }
@@ -71,7 +72,7 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 21px) scale(1.0625);">
+  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 22px) scale(1.05521);">
     <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px;"></canvas>
     <canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
     <canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
@@ -104,22 +105,22 @@
       <div id="cloud-cl1" data-group="cloud" style="display: none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
-            <button class="tab" onclick="showTab('cl1','outer',this)">Outer</button>
-            <button class="tab active" onclick="showTab('cl1','cut',this)">Cutout</button>
+            <button class="tab active" onclick="showTab('cl1','outer',this)">Outer</button>
+            <button class="tab" onclick="showTab('cl1','cut',this)">Cutout</button>
           </div>
         </div>
-        <div id="cl1-outer" data-group="cl1" style="display: none;">
-          <div class="row"><label>Scale</label>      <input type="range" id="sHScale" min="100" max="140" step="0.5" value="119.5"><span id="vHScale">119.5%</span></div>
-          <div class="row"><label>Alpha</label>      <input type="range" id="sHAlpha" min="0" max="100" step="1" value="13"><span id="vHAlpha">13%</span></div>
-          <div class="row"><label>Amplitude</label>  <input type="range" id="sHAmp" min="1" max="60" step="1" value="10"><span id="vHAmp">10</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sHFreq" min="1" max="40" step="1" value="29"><span id="vHFreq">29</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sHDet" min="0" max="20" step="0.5" value="9.5"><span id="vHDet">9.5</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sHDFr" min="1" max="80" step="1" value="38"><span id="vHDFr">38</span></div>
-          <div class="row"><label>Extra freq</label> <input type="range" id="sHEFq" min="0" max="60" step="1" value="15"><span id="vHEFq">15</span></div>
+        <div id="cl1-outer" data-group="cl1" style="">
+          <div class="row"><label>Scale</label>      <input type="range" id="sHScale" min="100" max="140" step="0.5" value="121"><span id="vHScale">121%</span></div>
+          <div class="row"><label>Alpha</label>      <input type="range" id="sHAlpha" min="0" max="100" step="1" value="25"><span id="vHAlpha">25%</span></div>
+          <div class="row"><label>Amplitude</label>  <input type="range" id="sHAmp" min="1" max="60" step="1" value="32"><span id="vHAmp">32</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sHFreq" min="1" max="40" step="1" value="16"><span id="vHFreq">16</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sHDet" min="0" max="20" step="0.5" value="17.5"><span id="vHDet">17.5</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sHDFr" min="1" max="80" step="1" value="75"><span id="vHDFr">75</span></div>
+          <div class="row"><label>Extra freq</label> <input type="range" id="sHEFq" min="0" max="60" step="1" value="39"><span id="vHEFq">39</span></div>
         </div>
-        <div id="cl1-cut" data-group="cl1">
-          <div class="row"><label>Scale</label>      <input type="range" id="sHCScale" min="100" max="140" step="0.5" value="126.5"><span id="vHCScale">126.5%</span></div>
-          <div class="row"><label>Offset</label>     <input type="range" id="sHOff" min="-300" max="300" step="1" value="48"><span id="vHOff">48</span></div>
+        <div id="cl1-cut" data-group="cl1" style="display: none;">
+          <div class="row"><label>Scale</label>      <input type="range" id="sHCScale" min="100" max="140" step="0.5" value="121"><span id="vHCScale">121%</span></div>
+          <div class="row"><label>Offset</label>     <input type="range" id="sHOff" min="-300" max="300" step="1" value="300"><span id="vHOff">300</span></div>
           <div class="row"><label>Amplitude</label>  <input type="range" id="sHCAmp" min="1" max="60" step="1" value="22"><span id="vHCAmp">22</span></div>
           <div class="row"><label>Frequency</label>  <input type="range" id="sHCFreq" min="1" max="40" step="1" value="28"><span id="vHCFreq">28</span></div>
           <div class="row"><label>Detail amp</label> <input type="range" id="sHCDet" min="0" max="20" step="0.5" value="6"><span id="vHCDet">6</span></div>
@@ -130,58 +131,63 @@
       <div id="cloud-cl2" data-group="cloud" style="display: none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
-            <button class="tab" onclick="showTab('cl2','outer',this)">Outer</button>
-            <button class="tab active" onclick="showTab('cl2','cut',this)">Cutout</button>
+            <button class="tab active" onclick="showTab('cl2','outer',this)">Outer</button>
+            <button class="tab" onclick="showTab('cl2','cut',this)">Cutout</button>
           </div>
         </div>
-        <div id="cl2-outer" data-group="cl2" style="display: none;">
+        <div id="cl2-outer" data-group="cl2" style="">
           <div class="row"><label>Scale</label>      <input type="range" id="sH2Scale" min="100" max="140" step="0.5" value="116"><span id="vH2Scale">116%</span></div>
-          <div class="row"><label>Alpha</label>      <input type="range" id="sH2Alpha" min="0" max="100" step="1" value="8"><span id="vH2Alpha">8%</span></div>
+          <div class="row"><label>Alpha</label>      <input type="range" id="sH2Alpha" min="0" max="100" step="1" value="14"><span id="vH2Alpha">14%</span></div>
           <div class="row"><label>Amplitude</label>  <input type="range" id="sH2Amp" min="1" max="60" step="1" value="20"><span id="vH2Amp">20</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sH2Freq" min="1" max="40" step="1" value="17"><span id="vH2Freq">17</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sH2Det" min="0" max="20" step="0.5" value="10"><span id="vH2Det">10</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sH2DFr" min="1" max="80" step="1" value="42"><span id="vH2DFr">42</span></div>
-          <div class="row"><label>Extra freq</label> <input type="range" id="sH2EFq" min="0" max="60" step="1" value="12"><span id="vH2EFq">12</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sH2Freq" min="1" max="40" step="1" value="28"><span id="vH2Freq">28</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sH2Det" min="0" max="20" step="0.5" value="0"><span id="vH2Det">0</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sH2DFr" min="1" max="80" step="1" value="1"><span id="vH2DFr">1</span></div>
+          <div class="row"><label>Extra freq</label> <input type="range" id="sH2EFq" min="0" max="60" step="1" value="30"><span id="vH2EFq">30</span></div>
         </div>
-        <div id="cl2-cut" data-group="cl2">
-          <div class="row"><label>Scale</label>      <input type="range" id="sH2CScale" min="100" max="140" step="0.5" value="112.5"><span id="vH2CScale">112.5%</span></div>
-          <div class="row"><label>Offset</label>     <input type="range" id="sH2Off" min="-300" max="300" step="1" value="14"><span id="vH2Off">14</span></div>
+        <div id="cl2-cut" data-group="cl2" style="display: none;">
+          <div class="row"><label>Scale</label>      <input type="range" id="sH2CScale" min="100" max="140" step="0.5" value="112"><span id="vH2CScale">112%</span></div>
+          <div class="row"><label>Offset</label>     <input type="range" id="sH2Off" min="-300" max="300" step="1" value="-24"><span id="vH2Off">-24</span></div>
           <div class="row"><label>Amplitude</label>  <input type="range" id="sH2CAmp" min="1" max="60" step="1" value="2"><span id="vH2CAmp">2</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sH2CFreq" min="1" max="40" step="1" value="17"><span id="vH2CFreq">17</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sH2CDet" min="0" max="20" step="0.5" value="8"><span id="vH2CDet">8</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sH2CDFr" min="1" max="80" step="1" value="38"><span id="vH2CDFr">38</span></div>
-          <div class="row"><label>Extra freq</label> <input type="range" id="sH2CEFq" min="0" max="60" step="1" value="18"><span id="vH2CEFq">18</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sH2CFreq" min="1" max="40" step="1" value="28"><span id="vH2CFreq">28</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sH2CDet" min="0" max="20" step="0.5" value="0"><span id="vH2CDet">0</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sH2CDFr" min="1" max="80" step="1" value="1"><span id="vH2CDFr">1</span></div>
+          <div class="row"><label>Extra freq</label> <input type="range" id="sH2CEFq" min="0" max="60" step="1" value="30"><span id="vH2CEFq">30</span></div>
         </div>
       </div>
       <div id="cloud-cl3" data-group="cloud" style="">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
-            <button class="tab" onclick="showTab('cl3','outer',this)">Outer</button>
-            <button class="tab active" onclick="showTab('cl3','cut',this)">Cutout</button>
+            <button class="tab active" onclick="showTab('cl3','outer',this)">Outer</button>
+            <button class="tab" onclick="showTab('cl3','cut',this)">Cutout</button>
           </div>
         </div>
-        <div id="cl3-outer" data-group="cl3" style="display: none;">
-          <div class="row"><label>Scale</label>      <input type="range" id="sH3Scale" min="100" max="140" step="0.5" value="110.5"><span id="vH3Scale">110.5%</span></div>
-          <div class="row"><label>Alpha</label>      <input type="range" id="sH3Alpha" min="0" max="100" step="1" value="9"><span id="vH3Alpha">9%</span></div>
-          <div class="row"><label>Amplitude</label>  <input type="range" id="sH3Amp" min="1" max="60" step="1" value="18"><span id="vH3Amp">18</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sH3Freq" min="1" max="40" step="1" value="22"><span id="vH3Freq">22</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sH3Det" min="0" max="20" step="0.5" value="8"><span id="vH3Det">8</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sH3DFr" min="1" max="80" step="1" value="45"><span id="vH3DFr">45</span></div>
+        <div id="cl3-outer" data-group="cl3" style="">
+          <div class="row"><label>Scale</label>      <input type="range" id="sH3Scale" min="100" max="140" step="0.5" value="112.5"><span id="vH3Scale">112.5%</span></div>
+          <div class="row"><label>Alpha</label>      <input type="range" id="sH3Alpha" min="0" max="100" step="1" value="8"><span id="vH3Alpha">8%</span></div>
+          <div class="row"><label>Amplitude</label>  <input type="range" id="sH3Amp" min="1" max="60" step="1" value="22"><span id="vH3Amp">22</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sH3Freq" min="1" max="40" step="1" value="19"><span id="vH3Freq">19</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sH3Det" min="0" max="20" step="0.5" value="7"><span id="vH3Det">7</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sH3DFr" min="1" max="80" step="1" value="15"><span id="vH3DFr">15</span></div>
           <div class="row"><label>Extra freq</label> <input type="range" id="sH3EFq" min="0" max="60" step="1" value="14"><span id="vH3EFq">14</span></div>
         </div>
-        <div id="cl3-cut" data-group="cl3">
+        <div id="cl3-cut" data-group="cl3" style="display: none;">
           <div class="row"><label>Scale</label>      <input type="range" id="sH3CScale" min="100" max="140" step="0.5" value="111.5"><span id="vH3CScale">111.5%</span></div>
-          <div class="row"><label>Offset</label>     <input type="range" id="sH3Off" min="-300" max="300" step="1" value="105"><span id="vH3Off">105</span></div>
+          <div class="row"><label>Offset</label>     <input type="range" id="sH3Off" min="-300" max="300" step="1" value="60"><span id="vH3Off">60</span></div>
           <div class="row"><label>Amplitude</label>  <input type="range" id="sH3CAmp" min="1" max="60" step="1" value="5"><span id="vH3CAmp">5</span></div>
-          <div class="row"><label>Frequency</label>  <input type="range" id="sH3CFreq" min="1" max="40" step="1" value="13"><span id="vH3CFreq">13</span></div>
-          <div class="row"><label>Detail amp</label> <input type="range" id="sH3CDet" min="0" max="20" step="0.5" value="12.5"><span id="vH3CDet">12.5</span></div>
-          <div class="row"><label>Detail freq</label><input type="range" id="sH3CDFr" min="1" max="80" step="1" value="27"><span id="vH3CDFr">27</span></div>
-          <div class="row"><label>Extra freq</label> <input type="range" id="sH3CEFq" min="0" max="60" step="1" value="16"><span id="vH3CEFq">16</span></div>
+          <div class="row"><label>Frequency</label>  <input type="range" id="sH3CFreq" min="1" max="40" step="1" value="7"><span id="vH3CFreq">7</span></div>
+          <div class="row"><label>Detail amp</label> <input type="range" id="sH3CDet" min="0" max="20" step="0.5" value="8"><span id="vH3CDet">8</span></div>
+          <div class="row"><label>Detail freq</label><input type="range" id="sH3CDFr" min="1" max="80" step="1" value="26"><span id="vH3CDFr">26</span></div>
+          <div class="row"><label>Extra freq</label> <input type="range" id="sH3CEFq" min="0" max="60" step="1" value="14"><span id="vH3CEFq">14</span></div>
         </div>
       </div>
       </div>
     <div id="cloud-puff-sliders" style="gap:3px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Cloud Spawn</div>
+      </div>
+      <div class="row"><label>Height</label> <input type="range" id="sCloudLift" min="50" max="600" step="5" value="220"><span id="vCloudLift">220</span></div>
+      <div class="row"><label>Spread</label> <input type="range" id="sCloudSpread" min="0" max="400" step="10" value="100"><span id="vCloudSpread">100</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;margin-top:4px">
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Cloud Shadow</div>
       </div>
       <div class="row"><label>Size</label>   <input type="range" id="sCldShdScale" min="50" max="200" step="1" value="150"><span id="vCldShdScale">150%</span></div>
@@ -213,15 +219,15 @@
         </div>
       </div>
       <div id="crust-shape" data-group="crust" style="display: none;">
-        <div class="row"><label>Amplitude</label>  <input type="range" id="sAmp" min="1" max="60" step="1" value="1"><span id="vAmp">1</span></div>
+        <div class="row"><label>Amplitude</label>  <input type="range" id="sAmp" min="1" max="60" step="1" value="4"><span id="vAmp">4</span></div>
         <div class="row"><label>Frequency</label>  <input type="range" id="sFreq" min="1" max="40" step="1" value="29"><span id="vFreq">29</span></div>
         <div class="row"><label>Detail amp</label> <input type="range" id="sDet" min="0" max="20" step="0.5" value="7.5"><span id="vDet">7.5</span></div>
         <div class="row"><label>Detail freq</label><input type="range" id="sDFr" min="1" max="80" step="1" value="38"><span id="vDFr">38</span></div>
-        <div class="row"><label>Height</label>     <input type="range" id="sCapH" min="20" max="300" step="1" value="86"><span id="vCapH">86</span></div>
+        <div class="row"><label>Height</label>     <input type="range" id="sCapH" min="20" max="300" step="1" value="104"><span id="vCapH">104</span></div>
         <div class="row"><label>Tile amp</label>   <input type="range" id="sTWAmp" min="0" max="15" step="0.5" value="8"><span id="vTWAmp">8</span></div>
         <div class="row"><label>Tile freq</label>  <input type="range" id="sTWFreq" min="0" max="80" step="1" value="8"><span id="vTWFreq">8</span></div>
       </div>
-      <div id="crust-cover" data-group="crust">
+      <div id="crust-cover" data-group="crust" style="">
         <div class="row"><label>Cover size</label>  <input type="range" id="sCover" min="50" max="105" step="0.5" value="99.5"><span id="vCover">99.5%</span></div>
         <div class="row"><label>Shadow size</label> <input type="range" id="sShadowS" min="50" max="110" step="0.5" value="101"><span id="vShadowS">101%</span></div>
         <div class="row"><label>Shadow alpha</label><input type="range" id="sShadowA" min="0" max="100" step="1" value="18"><span id="vShadowA">18%</span></div>
@@ -336,7 +342,7 @@
 </div>
 <script>
 const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
+let ctx    = canvas.getContext('2d');
 const grassCanvas = document.getElementById('gc');
 const gctx        = grassCanvas.getContext('2d');
 const btfCanvas   = document.getElementById('btf');
@@ -345,20 +351,21 @@ const bctx        = btfCanvas.getContext('2d');
 // ── TUNING ────────────────────────────────────────────────────────────────────
 const TILE_COUNT = 180;  // vertices around planet (2° each)
 const SURF_R     = 28;   // planet surface sits this far above the base circle
-const CLOUD_LIFT = 305;  // extra pixels above the halo line where clouds float
-let   CAP_H      = 86;   // nominal height of the cap (top face)
+let   CLOUD_LIFT   = 220;  // extra pixels above the halo line where clouds float
+let   CLOUD_SPREAD = 100;  // random vertical range clouds spawn within
+let   CAP_H      = 104;   // nominal height of the cap (top face)
 const BODY_H     = 20;   // height of the body (side face) below the cap
 const CAP_ARCH   = 0;    // no per-tile bump — wave alone drives the shape
 const WAVE_AMP   = 18;   // boundary wave amplitude (±px)
 
 // Grass blades
-const MAX_BLADES        = 5;               // blades per grass tile per row
+const MAX_BLADES        = 4;               // blades per grass tile per row
 const SPROUT_RATE       = 0.3;             // new blades per second
 const GROW_MIN          = 0.075;           // stages/sec (slowest)
 const GROW_MAX          = 0.225;           // stages/sec (fastest)
 const BLADE_SCALE       = 0.45;            // SVG units → screen px
 const BLADE_ROW_OFFSETS = [-20, -3, 19, 38];  // radial offsets (px): front → back
-const ROW_STAGGER       = [0, 0.12, 0.24, 0.06]; // horizontal offsetFrac shift per row
+const ROW_STAGGER       = [0, 0.5/MAX_BLADES, 0, 0.5/MAX_BLADES]; // alternating half-step offset per row
 // Sway
 let BLADE_WIND_SENS  = 700; // sway angle per unit of windVel (windVel is ~0.001–0.003)
 const BLADE_ROT_SENS   = 160.0; // sway angle per unit of rotation velocity (vel ~0.001–0.006)
@@ -402,6 +409,7 @@ const NATIVE_W = 1920, NATIVE_H = 920;
 let W = NATIVE_W, H = NATIVE_H, R, CX, CY, currentDpr = 1;
 let rockCanvas = null, crustDotCanvas = null, coverSpotsCanvas = null;
 let lastR = null;
+let _skyGrad = null, _sunBloom = null, _sunGrad = null, _planetGrad = null;
 const game = document.getElementById('game');
 function layout() {
   const vw = window.innerWidth;
@@ -443,6 +451,7 @@ function layout() {
   }
   lastR = R;
   if (rockCanvas) { bakeRockCanvas(); bakeCrustDotCanvas(); bakeCoverSpotsCanvas(); }
+  _skyGrad = null; _sunBloom = null; _sunGrad = null; _planetGrad = null;
 }
 let resizeTimer;
 const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(layout, 120); };
@@ -546,7 +555,7 @@ function sunAt(i) {
 // The wave is a continuous function of angle (radians, my convention: 0=top).
 // Drawing resolution (WAVE_SEGS) is independent of tile count — more segments
 // means smoother curves even at high detail frequencies.
-const WAVE_SEGS  = 720; // one segment per 0.5° — smooth at any frequency
+const WAVE_SEGS  = 180; // 2° per segment — bezier curves fill in between
 // Precomputed sin/cos for all WAVE_SEGS angles — eliminates per-point trig in every wave path loop
 const waveSin = new Float64Array(WAVE_SEGS);
 const waveCos = new Float64Array(WAVE_SEGS);
@@ -554,13 +563,21 @@ for (let _s = 0; _s < WAVE_SEGS; _s++) {
   const _a = (_s / WAVE_SEGS) * Math.PI * 2;
   waveSin[_s] = Math.sin(_a); waveCos[_s] = Math.cos(_a);
 }
-// Preallocated scratch buffers for green ring wave paths — reused every frame, no allocation churn
+// Wave lookup tables — pre-computed each frame so rendering loops do array lookups, not sin() calls
+const _wWave  = new Float32Array(WAVE_SEGS), _wCover  = new Float32Array(WAVE_SEGS), _wShadow = new Float32Array(WAVE_SEGS);
+const _wH     = new Float32Array(WAVE_SEGS), _wHC     = new Float32Array(WAVE_SEGS);
+const _wH2    = new Float32Array(WAVE_SEGS), _wH2C    = new Float32Array(WAVE_SEGS);
+const _wH3    = new Float32Array(WAVE_SEGS), _wH3C    = new Float32Array(WAVE_SEGS);
+const _wDH    = new Float32Array(WAVE_SEGS), _wDHC    = new Float32Array(WAVE_SEGS);
+const _wDH2   = new Float32Array(WAVE_SEGS), _wDH2C   = new Float32Array(WAVE_SEGS);
+// Preallocated scratch buffers for wave paths — reused every frame, no allocation churn
 const _grXs = new Float32Array(WAVE_SEGS), _grYs = new Float32Array(WAVE_SEGS);
 const _grHXs = new Float32Array(WAVE_SEGS), _grHYs = new Float32Array(WAVE_SEGS);
+const _hXs  = new Float32Array(WAVE_SEGS), _hYs  = new Float32Array(WAVE_SEGS);
 // Cached sin/cos of rotation — updated once per frame before any draw calls
 let sinRot = 0, cosRot = 1;
 const wavePhase  = [0,1,2,3].map(() => Math.random()*Math.PI*2);
-let waveAmp  = 1;
+let waveAmp  = 4;
 let waveFreq = 29;
 let detAmp   = 7.5;
 let detFreq  = 38;
@@ -574,10 +591,10 @@ let gring2Amp = 56, gring2Freq = 13, gring2Det = 35.5, gring2DetFr = 50;
 const GRING2_PARALLAX = 0.15;
 
 let HALO2_SCALE = 1.16;
-let HALO2_ALPHA = 0.08;
-let HALO2_CUT_SCALE = 1.125;
-let HALO2_OFFSET = 14;
-let h2WaveAmp = 8.744709544810506, h2WaveFreq = 17, h2DetAmp = 10, h2DetFreq = 42, h2ExtraFreq = 12;
+let HALO2_ALPHA = 0.14;
+let HALO2_CUT_SCALE = 1.12;
+let HALO2_OFFSET = -24;
+let h2WaveAmp = 23.590271270554165, h2WaveFreq = 28, h2DetAmp = 0, h2DetFreq = 1, h2ExtraFreq = 30;
 const h2Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2ExtraPhase = Math.random()*Math.PI*2;
 function halo2WaveAt(a) {
@@ -587,7 +604,7 @@ function halo2WaveAt(a) {
        + Math.sin(a*Math.round(h2DetFreq*1.7)+h2Phase[3])*(h2DetAmp*0.5)
        + Math.sin(a*h2ExtraFreq+h2ExtraPhase)*h2WaveAmp*0.5;
 }
-let h2cWaveAmp = 4.220653385688756, h2cWaveFreq = 17, h2cDetAmp = 8, h2cDetFreq = 38, h2cExtraFreq = 18;
+let h2cWaveAmp = 0.5680815650216737, h2cWaveFreq = 28, h2cDetAmp = 0, h2cDetFreq = 1, h2cExtraFreq = 30;
 const h2cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2cExtraPhase = Math.random()*Math.PI*2;
 function halo2CutWaveAt(a) {
@@ -600,11 +617,11 @@ function halo2CutWaveAt(a) {
 const HALO_PARALLAX  = 0.2;
 const HALO2_PARALLAX = 0.38;
 
-let HALO3_SCALE = 1.105;
-let HALO3_ALPHA = 0.09;
+let HALO3_SCALE = 1.125;
+let HALO3_ALPHA = 0.08;
 let HALO3_CUT_SCALE = 1.115;
-let HALO3_OFFSET = 105;
-let h3WaveAmp = 27.064431724310893, h3WaveFreq = 22, h3DetAmp = 8, h3DetFreq = 45, h3ExtraFreq = 14;
+let HALO3_OFFSET = 60;
+let h3WaveAmp = 24.55902452965238, h3WaveFreq = 19, h3DetAmp = 7, h3DetFreq = 15, h3ExtraFreq = 14;
 const h3Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3ExtraPhase = Math.random()*Math.PI*2;
 function halo3WaveAt(a) {
@@ -614,7 +631,7 @@ function halo3WaveAt(a) {
        + Math.sin(a*Math.round(h3DetFreq*1.7)+h3Phase[3])*(h3DetAmp*0.5)
        + Math.sin(a*h3ExtraFreq+h3ExtraPhase)*h3WaveAmp*0.5;
 }
-let h3cWaveAmp = 25.748605145303443, h3cWaveFreq = 22, h3cDetAmp = 7, h3cDetFreq = 40, h3cExtraFreq = 16;
+let h3cWaveAmp = 27.08985324601436, h3cWaveFreq = 7, h3cDetAmp = 8, h3cDetFreq = 26, h3cExtraFreq = 14;
 const h3cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3cExtraPhase = Math.random()*Math.PI*2;
 function halo3CutWaveAt(a) {
@@ -718,6 +735,12 @@ document.getElementById('sGR2Freq') .addEventListener('input', e => { gring2Freq
 document.getElementById('sGR2Det')  .addEventListener('input', e => { gring2Det    = +e.target.value; document.getElementById('vGR2Det').textContent   = gring2Det; });
 document.getElementById('sGR2DFr')  .addEventListener('input', e => { gring2DetFr  = +e.target.value; document.getElementById('vGR2DFr').textContent   = gring2DetFr; });
 
+document.getElementById('sCloudLift').addEventListener('input', e => {
+  CLOUD_LIFT = +e.target.value; document.getElementById('vCloudLift').textContent = CLOUD_LIFT;
+});
+document.getElementById('sCloudSpread').addEventListener('input', e => {
+  CLOUD_SPREAD = +e.target.value; document.getElementById('vCloudSpread').textContent = CLOUD_SPREAD;
+});
 document.getElementById('sCldShdScale').addEventListener('input', e => {
   CLOUD_SHD_SCALE = +e.target.value / 100; document.getElementById('vCldShdScale').textContent = e.target.value + '%';
 });
@@ -801,18 +824,9 @@ function generateTiles() {
 const tiles = generateTiles();
 const tileEvapPhase = Array.from({length: TILE_COUNT}, () => Math.random() * Math.PI * 2);
 
-// Place a new blade in the largest gap among existing blades in that row
+// Return the next grid-aligned column position for a new blade in this row
 function pickBladeFrac(rowArr, stagger) {
-  if (rowArr.length === 0) return Math.random() + stagger;
-  const slots = rowArr.map(b => ((b.offsetFrac - stagger) % 1 + 1) % 1).sort((a, b) => a - b);
-  let best = 0, bestSz = 0;
-  for (let i = 0; i <= slots.length; i++) {
-    const lo = i === 0 ? slots[slots.length - 1] - 1 : slots[i - 1];
-    const hi = i === slots.length ? slots[0] + 1 : slots[i];
-    const sz = hi - lo;
-    if (sz > bestSz) { bestSz = sz; best = lo + sz / 2; }
-  }
-  return ((best + (Math.random() - 0.5) * Math.min(0.1, bestSz * 0.25) + 1) % 1) + stagger;
+  return rowArr.length / MAX_BLADES + stagger;
 }
 
 // ── GRASS BLADE DATA ──────────────────────────────────────────────────────────
@@ -831,18 +845,83 @@ const BLADE_CX   = [5.53, 19.35, 32.23, 46.18, 62.78, 79.98, 99.61, 119.12];
 const SVG_BASE_Y = 94.93;
 const bladePaths = BLADE_PATH_STRS.map(d => new Path2D(d));
 
+// ── BLADE SPRITES ─────────────────────────────────────────────────────────────
+// Pre-render each (stageIdx × healthBucket) to a small OffscreenCanvas.
+// drawImage on a cached image is ~2–3× faster than fill(path)+stroke(path)
+// and keeps per-blade depth ordering, so strokes are always correct.
+const SPRITE_PAD = 3;   // px, so stroke doesn't clip at sprite edge
+const SPRITE_H   = Math.ceil(SVG_BASE_Y * BLADE_SCALE + SPRITE_PAD * 2 + 2);
+const SPRITE_W   = Math.ceil((BLADE_CX[7] + 22) * BLADE_SCALE + SPRITE_PAD * 2);
+const SPRITE_AY  = SVG_BASE_Y * BLADE_SCALE + SPRITE_PAD; // blade-base y in sprite
+const SPRITE_AX  = BLADE_CX.map(cx => cx * BLADE_SCALE + SPRITE_PAD); // per stage
+const HEALTH_BUCKETS = 11; // 0 % to 100 % in 10 % steps
+const _spriteCache   = Array.from({length: 8}, () => new Array(HEALTH_BUCKETS).fill(null));
+
+function _buildSprite(si, hb) {
+  const hf   = hb / (HEALTH_BUCKETS - 1);
+  const fill = `hsl(${GRASS.lushHue * hf + GRASS.deadHue * (1-hf) | 0},${GRASS.lushSat * hf + GRASS.deadSat * (1-hf) | 0}%,${GRASS.lushLit * hf + GRASS.deadLit * (1-hf) | 0}%)`;
+  const oc   = new OffscreenCanvas(SPRITE_W, SPRITE_H);
+  const oct  = oc.getContext('2d');
+  oct.setTransform(BLADE_SCALE, 0, 0, BLADE_SCALE, SPRITE_PAD, SPRITE_PAD);
+  oct.fillStyle   = fill;    oct.fill(bladePaths[si]);
+  oct.strokeStyle = '#172614'; oct.lineWidth = 7.5 * BLADE_SCALE;
+  oct.stroke(bladePaths[si]);
+  return (_spriteCache[si][hb] = oc);
+}
+function getBladeSprite(si, hb) { return _spriteCache[si][hb] || _buildSprite(si, hb); }
+
+// ── PHASE 2: PixiJS blade textures & sprite pools ────────────────────────────
+// One PixiJS Texture per (growth-stage, health-bucket) combination.
+// Built lazily from the same OffscreenCanvas sprites already cached above.
+const _pixiTexCache = Array.from({length: 8}, () => new Array(HEALTH_BUCKETS).fill(null));
+function getBladeTexture(si, hb) {
+  if (_pixiTexCache[si][hb]) return _pixiTexCache[si][hb];
+  return (_pixiTexCache[si][hb] = PIXI.Texture.from(getBladeSprite(si, hb)));
+}
+
+// Cache for textures built from HTML Image elements.
+// We render into an OffscreenCanvas at the requested display size first — this
+// avoids PixiJS SVG-upload issues and ensures the texture is exactly the right
+// pixel dimensions so the sprite needs no extra scale correction.
+// Key: img.src + "|" + w + "|" + h  (multiple sizes for the same image are fine).
+// Keyed by the Image element itself so different Image objects are always distinct
+// (avoids hash collisions between leg-frame SVGs that share the same URL tail).
+// Each entry stores { src, w, h, tex } — re-rendered when any of those change.
+const _imgTexMap = new Map();
+function _texFromImg(img, w, h) {
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  let entry = _imgTexMap.get(img);
+  if (!entry || entry.w !== w || entry.h !== h) {
+    const oc = new OffscreenCanvas(Math.round(w), Math.round(h));
+    const octx = oc.getContext('2d');
+    const tex = PIXI.Texture.from(oc);
+    entry = { src: null, w, h, oc, octx, tex };
+    _imgTexMap.set(img, entry);
+  }
+  if (entry.src !== img.src) {
+    entry.octx.clearRect(0, 0, entry.w, entry.h);
+    entry.octx.drawImage(img, 0, 0, w, h);
+    entry.src = img.src;
+    entry.tex.source.update();
+  }
+  return entry.tex;
+}
+
+const _bkSprPool = [];  // PIXI.Sprite pool for back grass rows (3+2)
+const _ftSprPool = [];  // PIXI.Sprite pool for front grass rows (1+0)
+
 // Pre-populate blades for all starting grass tiles
 for (const t of tiles) {
   if (t.type === 0) {
     for (let row = 0; row < BLADE_ROW_OFFSETS.length; row++) {
       for (let b = 0; b < MAX_BLADES; b++) {
         t.bladesByRow[row].push({
-          offsetFrac: (b + 0.2 + Math.random() * 0.6) / MAX_BLADES + ROW_STAGGER[row],
+          offsetFrac: b / MAX_BLADES + ROW_STAGGER[row],
           growth:     0,
           growthRate: GROW_MIN + Math.random() * (GROW_MAX - GROW_MIN),
           growDelay:  Math.random() * 30,
           scaleVar:   0.8 + Math.random() * 0.4,
-          lateralVar: (Math.random() - 0.5) * 0.02,
+          lateralVar: 0,
           radialVar:  (Math.random() - 0.5) * 8,
           swayPhase:  Math.random() * Math.PI * 2,
         });
@@ -983,13 +1062,7 @@ function drawTiles() {
   ctx.save();
 
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + SURF_R + CAP_H + waveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + SURF_R + CAP_H, _wWave);
   ctx.clip();
 
   const rInner = R - 60;
@@ -1120,101 +1193,224 @@ function noise1D(x) {
 
 let lastGrassRot  = Infinity;
 let lastGrassSway = Infinity;
+const _bladePool  = []; // reused every frame — avoids per-frame GC allocation
+
 function drawGrassBlades() {
-  // Skip redraw when the planet is still and wind animation is negligible
+  // Creature animates independently of grass (blink, bounce, rotation) — always update.
+  _updatePixiCreature();
+
+  if (!window.pixiBackGrass) return; // PixiJS not ready yet (async init still running)
+
+  // Skip grass sprite update when nothing has moved.
+  // PixiJS keeps rendering the same sprites without any CPU work on our part.
   if (Math.abs(rotation  - lastGrassRot)  < 0.0005 &&
       Math.abs(grassSway - lastGrassSway) < 0.002  &&
       grassWindAmp < 0.008) return;
   lastGrassRot  = rotation;
   lastGrassSway = grassSway;
-  gctx.clearRect(0, 0, W, H);
-  gctx.strokeStyle = '#172614';
 
-  // Clip to outside the planet body — prevents blade bases from deep-sunken tiles
-  // appearing above the cap surface of neighboring high-amplitude tiles.
-  // Uses a simple fixed circle at R+SURF_R (the floor of the cap zone); anything
-  // below that is inside the planet body and invisible on the planet canvas anyway.
-  gctx.save();
-  gctx.beginPath();
-  gctx.rect(0, 0, W, H);
-  gctx.arc(CX, CY, R + SURF_R, 0, Math.PI * 2);
-  gctx.clip('evenodd');
+  _updateGrassLayer(BLADE_ROW_OFFSETS.length - 1, 2, _bkSprPool, window.pixiBackGrass);
+  _updateGrassLayer(1, 0, _ftSprPool, window.pixiFrontGrass);
+}
 
+// Populates the given PixiJS container with blade sprites for the given row range.
+// The planet surface clip (evenodd) is replaced by a simple distance check — any
+// blade whose base sits inside R+SURF_R from the planet centre is skipped.
+function _updateGrassLayer(fromRow, toRow, sprPool, container) {
   const centerTile = (Math.round(-rotation / (Math.PI * 2) * TILE_COUNT) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
-  const visHalf    = 28; // visible arc is ~17 tiles wide; 28 gives ample buffer
+  const visHalf    = 20;
+  const clipRSq    = (R + SURF_R) * (R + SURF_R); // blades inside this radius are hidden
+  let   poolLen    = 0;
 
-  // Reusable transform object — Path2D.addPath copies values, so mutation is safe
-  const _m = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-
-  function drawBladeRows(fromRow, toRow) {
-    gctx.strokeStyle = '#172614';
-    gctx.lineWidth   = 6.5 * BLADE_SCALE;
-
-    // Collect all blades from all rows in this pass, then sort by true 3D depth
-    // so blades from different rows and tiles never incorrectly overlap.
-    const allBlades = [];
-
-    for (let row = fromRow; row >= toRow; row--) {
-      const rowR = BLADE_ROW_OFFSETS[row];
-      for (let di = -visHalf; di <= visHalf; di++) {
-        const i    = (centerTile + di + TILE_COUNT) % TILE_COUNT;
-        const tile = tiles[i];
-        if (tile.type !== 0) continue;
-        const rowBlades = tile.bladesByRow[row];
-        if (rowBlades.length === 0) continue;
-        if ((tile.health | 0) !== tile._healthCache) {
-          const hf = tile.health / 100;
-          tile._fillStyle   = `hsl(${GRASS.lushHue * hf + GRASS.deadHue * (1-hf) | 0},${GRASS.lushSat * hf + GRASS.deadSat * (1-hf) | 0}%,${GRASS.lushLit * hf + GRASS.deadLit * (1-hf) | 0}%)`;
-          tile._healthCache = tile.health | 0;
-        }
-        const fillStyle = tile._fillStyle;
-        for (const blade of rowBlades) {
-          if (blade.growth < 0.5) continue;
-          const stageIdx  = Math.min(7, Math.floor(blade.growth));
-          const tileFrac  = i + blade.offsetFrac + blade.lateralVar;
-          const tileAngle = (tileFrac / TILE_COUNT) * Math.PI * 2;
-          const waveIdx   = ((Math.round(tileFrac) % TILE_COUNT) + TILE_COUNT) % TILE_COUNT;
-          const surfR     = R + SURF_R + CAP_H * 0.5 + wave[waveIdx] + rowR + blade.radialVar;
-          const a         = tileAngle + rotation;
-          const bx        = CX + Math.sin(a) * surfR;
-          const by        = CY - Math.cos(a) * surfR;
-          if (bx < -20 || bx > W + 20 || by > H + 60) continue;
-          const sway = grassSway + (noise1D(grassPhase + tileFrac * 0.12) * 2 - 1) * grassWindAmp;
-          const s    = BLADE_SCALE * blade.scaleVar;
-          const θ    = a + sway;
-          const cθ   = Math.cos(θ), sθ = Math.sin(θ);
-          const sc   = s * cθ,      ss  = s * sθ;
-          const cx   = BLADE_CX[stageIdx];
-          allBlades.push({
-            depth:     Math.cos(a) * surfR,  // larger = closer to viewer = draw later
-            stageIdx,
-            ta: sc, tb: ss, tc: -ss, td: sc,
-            te: bx - sc * cx + ss * SVG_BASE_Y,
-            tf: by - ss * cx - sc * SVG_BASE_Y,
-            fillStyle,
-          });
-        }
+  for (let row = fromRow; row >= toRow; row--) {
+    const rowR = BLADE_ROW_OFFSETS[row];
+    for (let di = -visHalf; di <= visHalf; di++) {
+      const i    = (centerTile + di + TILE_COUNT) % TILE_COUNT;
+      const tile = tiles[i];
+      if (tile.type !== 0) continue;
+      const rowBlades = tile.bladesByRow[row];
+      if (rowBlades.length === 0) continue;
+      const hb = Math.min(10, Math.round(tile.health / 10));
+      for (const blade of rowBlades) {
+        if (blade.growth < 0.5) continue;
+        const si        = Math.min(7, Math.floor(blade.growth));
+        const tileFrac  = i + blade.offsetFrac;
+        const tileAngle = (tileFrac / TILE_COUNT) * Math.PI * 2;
+        const waveIdx   = ((Math.round(tileFrac) % TILE_COUNT) + TILE_COUNT) % TILE_COUNT;
+        const surfR     = R + SURF_R + CAP_H * 0.5 + wave[waveIdx] + rowR + blade.radialVar;
+        const a         = tileAngle + rotation;
+        const bx        = CX + Math.sin(a) * surfR;
+        const by        = CY - Math.cos(a) * surfR;
+        if (bx < -20 || bx > W + 20 || by > H + 60) continue;
+        const dx = bx - CX, dy = by - CY;
+        if (dx * dx + dy * dy < clipRSq) continue; // base inside planet body
+        const sway = grassSway + (noise1D(grassPhase + tileFrac * 0.12) * 2 - 1) * grassWindAmp;
+        let slot = _bladePool[poolLen];
+        if (!slot) { slot = {}; _bladePool[poolLen] = slot; }
+        poolLen++;
+        slot.depth = by; // Y-sort: lower on screen = higher zIndex = drawn in front
+        slot.si    = si;   slot.hb = hb;
+        slot.θ     = a + sway;
+        slot.sv    = blade.scaleVar;
+        slot.bx    = bx;   slot.by  = by;
       }
     }
-
-    // Highest-on-screen blades first (largest cos(a)*surfR = top of arc = painted behind lower blades)
-    allBlades.sort((x, y) => y.depth - x.depth);
-
-    for (const b of allBlades) {
-      gctx.setTransform(b.ta, b.tb, b.tc, b.td, b.te, b.tf);
-      gctx.fillStyle = b.fillStyle;
-      gctx.fill(bladePaths[b.stageIdx]);
-      gctx.stroke(bladePaths[b.stageIdx]);
-    }
-
-    gctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  // Rows 3+2 behind creature; rows 1+0 in front of creature
-  drawBladeRows(BLADE_ROW_OFFSETS.length - 1, 2);
-  drawCreature(gctx);
-  drawBladeRows(1, 0);
-  gctx.restore(); // remove surface clip
+  _bladePool.length = poolLen;
+  _bladePool.sort((x, y) => y.depth - x.depth);
+
+  // Grow the sprite pool as needed (sprites are never removed, just hidden)
+  while (sprPool.length < poolLen) {
+    const s = new PIXI.Sprite();
+    container.addChild(s);
+    sprPool.push(s);
+  }
+  // Assign visible blades to sprites
+  for (let idx = 0; idx < poolLen; idx++) {
+    const b = _bladePool[idx];
+    const s = sprPool[idx];
+    s.texture = getBladeTexture(b.si, b.hb);
+    s.pivot.set(SPRITE_AX[b.si], SPRITE_AY); // blade base = pivot = world position
+    s.position.set(b.bx, b.by);
+    s.rotation  = b.θ;
+    s.scale.set(b.sv);
+    s.zIndex    = b.depth; // sortableChildren=true renders in this order
+    s.visible   = true;
+  }
+  // Hide leftover sprites from a previous frame with more blades
+  for (let idx = poolLen; idx < sprPool.length; idx++) sprPool[idx].visible = false;
+}
+
+// ── PHASE 2: PixiJS creature ──────────────────────────────────────────────────
+// The creature sits between back grass and front grass in the PixiJS stage, so
+// it must live in PixiJS rather than on the gc Canvas2D layer.
+//
+// Container hierarchy (created lazily on first call):
+//   pixiCreature
+//     posContainer        — position=(tx,ty), rotation=screenAngle
+//       pulseContainer    — scales around the body midpoint for the bounce effect
+//         wiggleContainer — rotates around the flip-pivot for the walking wiggle
+//           flipContainer — scale.x = -1 when creature faces left
+//             bodySprite  — main creature / leg-frame image
+//             blinkSprite — blink overlay (hidden when blinkState === 0)
+//     heartSprites[]      — in world space, not creature-local space
+
+let   _cReady     = false;
+let   _cPosC, _cPulseC, _cWiggleC, _cFlipC, _cBodyS, _cBlinkS;
+const _cHeartPool = [];
+
+function _updatePixiCreature() {
+  if (!window.pixiCreature) return;
+
+  // ── Lazy setup ────────────────────────────────────────────────────────────
+  if (!_cReady) {
+    _cPosC    = new PIXI.Container();
+    _cPulseC  = new PIXI.Container();
+    _cWiggleC = new PIXI.Container();
+    _cFlipC   = new PIXI.Container();
+    _cBodyS   = new PIXI.Sprite();
+    _cBlinkS  = new PIXI.Sprite();
+
+    // These depend on CREATURE_DISPLAY_H which is defined later in the file,
+    // so they must be computed here (at call time) rather than at module scope.
+    const anchorY  = (CREATURE_DISPLAY_H - 40) / CREATURE_DISPLAY_H;
+    const pivotY   = -((CREATURE_DISPLAY_H - 40) * 0.5);
+    _cBodyS.anchor.set(0.5, anchorY);
+    _cBlinkS.anchor.set(0.5, anchorY);
+
+    // Pulse: scale around the body midpoint so the creature doesn't shift.
+    // Setting both pivot and position to the same point keeps the pivot "in place".
+    _cPulseC.pivot.set(0, pivotY);
+    _cPulseC.position.set(0, pivotY);
+
+    _cFlipC.addChild(_cBodyS, _cBlinkS);
+    _cWiggleC.addChild(_cFlipC);
+    _cPulseC.addChild(_cWiggleC);
+    _cPosC.addChild(_cPulseC);
+    window.pixiCreature.addChild(_cPosC);
+    _cReady = true;
+  }
+
+  // ── Compute screen position ───────────────────────────────────────────────
+  const tileAngle   = (creaturePos / TILE_COUNT) * Math.PI * 2;
+  const screenAngle = tileAngle + rotation;
+  const surfR       = R + SURF_R + CAP_H + 5 + waveAt(tileAngle);
+  const tx = CX + Math.sin(screenAngle) * surfR;
+  const ty = CY - Math.cos(screenAngle) * surfR;
+
+  // Cull when off-screen
+  if (tx < -200 || tx > W + 200 || ty > H + 200) {
+    _cPosC.visible = false;
+    _updatePixiHearts();
+    return;
+  }
+  _cPosC.visible = true;
+
+  // 1. Surface position + radial alignment
+  _cPosC.position.set(tx, ty);
+  _cPosC.rotation = screenAngle;
+
+  // 2. Bounce pulse (scale around body midpoint)
+  const bounceFrac = creatureBounceTimer / 0.2;
+  _cPulseC.scale.set(creatureBounceTimer > 0 ? 1 - Math.sin(bounceFrac * Math.PI) * 0.10 : 1);
+
+  // 3. Walking wiggle (rotate around the active foot pivot)
+  const wiggle  = creatureMoving ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
+  const pivotX  = creatureFlip ? -CREATURE_DISPLAY_W / 2 : CREATURE_DISPLAY_W / 2;
+  _cWiggleC.pivot.set(pivotX, 0);
+  _cWiggleC.position.set(pivotX, 0);
+  _cWiggleC.rotation = wiggle;
+
+  // 4. Horizontal flip
+  _cFlipC.scale.x = creatureFlip ? -1 : 1;
+
+  // 5. Body texture (main image or current leg-animation frame)
+  const bodyImg = (creatureLegReady && creatureLegImgs[creatureLegIdx].complete && creatureLegImgs[creatureLegIdx].naturalWidth)
+    ? creatureLegImgs[creatureLegIdx] : creatureImg;
+  const bodyTex = _texFromImg(bodyImg, CREATURE_DISPLAY_W, CREATURE_DISPLAY_H);
+  if (bodyTex) _cBodyS.texture = bodyTex;
+
+  // 6. Blink overlay
+  if (blinkState > 0) {
+    const blinkImg = blinkState === 2 ? blinkClosedImg : blinkHalfImg;
+    const blinkTex = _texFromImg(blinkImg, CREATURE_DISPLAY_W, CREATURE_DISPLAY_H);
+    if (blinkTex) { _cBlinkS.texture = blinkTex; _cBlinkS.visible = true; }
+  } else {
+    _cBlinkS.visible = false;
+  }
+
+  _updatePixiHearts();
+}
+
+function _updatePixiHearts() {
+  if (!window.pixiCreature) return;
+  // Grow the heart sprite pool as hearts are spawned
+  while (_cHeartPool.length < hearts.length) {
+    const s = new PIXI.Sprite();
+    s.anchor.set(0.5);
+    window.pixiCreature.addChild(s);
+    _cHeartPool.push(s);
+  }
+  for (let i = 0; i < _cHeartPool.length; i++) {
+    const s = _cHeartPool[i];
+    if (i >= hearts.length) { s.visible = false; continue; }
+    const h       = hearts[i];
+    const elapsed = (1 - h.timer / HEART_DURATION) * HEART_DURATION;
+    const growEnd = 0.35, shrinkStart = HEART_DURATION - 2.0;
+    let sc = elapsed < growEnd ? 22 * (elapsed / growEnd)
+           : elapsed < shrinkStart ? 22
+           : 22 * (1 - (elapsed - shrinkStart) / 2.0);
+    sc = Math.max(0, sc);
+    // Build texture at a fixed reference size (32×32); sprite scale handles the rest
+    const tex = _texFromImg(heartImg, 32, 32);
+    if (tex) s.texture = tex;
+    s.width  = sc;
+    s.height = sc;
+    s.position.set(h.x, h.y);
+    s.alpha   = elapsed < 0.15 ? elapsed / 0.15 : 1;
+    s.visible = true;
+  }
 }
 
 function updateGrassSway(dtSec) {
@@ -1351,7 +1547,7 @@ function updateTiles(dt) {
         const sr = Math.floor(Math.random() * BLADE_ROW_OFFSETS.length);
         tiles[ni].bladesByRow[sr].push({ offsetFrac: pickBladeFrac(tiles[ni].bladesByRow[sr], ROW_STAGGER[sr]), growth: 1,
           growthRate: GROW_MIN + Math.random()*(GROW_MAX-GROW_MIN), growDelay: 0,
-          scaleVar: 0.8+Math.random()*0.4, lateralVar:(Math.random()-0.5)*0.06,
+          scaleVar: 0.8+Math.random()*0.4, lateralVar:0,
           radialVar:(Math.random()-0.5)*8, swayPhase:Math.random()*Math.PI*2 });
       }
     }
@@ -1388,7 +1584,7 @@ function updateTiles(dt) {
           growthRate: GROW_MIN + Math.random() * (GROW_MAX - GROW_MIN),
           growDelay:  Math.random() * 8,
           scaleVar:   0.8 + Math.random() * 0.4,
-          lateralVar: (Math.random() - 0.5) * 0.02,
+          lateralVar: 0,
           radialVar:  (Math.random() - 0.5) * 8,
           swayPhase:  Math.random() * Math.PI * 2,
         });
@@ -1573,7 +1769,8 @@ function updateButterflies(dt) {
       const bx = CX + Math.sin(b.angle) * b.radius;
       const by = CY - Math.cos(b.angle) * b.radius;
       // Find nearest predefined spot (horn / butt) that isn't already occupied
-      const takenLX = new Set(butterflies.filter(o => o !== b && o.landState === 'landed').map(o => o.landLX));
+      const takenLX = new Set();
+      for (const o of butterflies) { if (o !== b && o.landState === 'landed') takenLX.add(o.landLX); }
       let bestSpot = null, bestDist = Infinity;
       for (const spot of BTF_SPOTS) {
         if (takenLX.has(spot.lx)) continue;
@@ -1730,8 +1927,8 @@ function spawnCloud() {
     screenX       = CX + (Math.random() - 0.5) * W * 0.55;
     const lower   = Math.random() < 0.3;
     const screenY = lower
-      ? haloTopY - CLOUD_LIFT + 80 + Math.random() * 250
-      : haloTopY - CLOUD_LIFT + 80 + Math.random() * 120;
+      ? haloTopY - CLOUD_LIFT + 80 + Math.random() * CLOUD_SPREAD * 2
+      : haloTopY - CLOUD_LIFT + 80 + Math.random() * CLOUD_SPREAD;
     const dx = screenX - CX;
     const dy = CY - screenY;
     radius   = Math.sqrt(dx * dx + dy * dy);
@@ -1746,6 +1943,7 @@ function spawnCloud() {
   const water   = 60 + Math.random() * 40;
   const puffs   = buildCloudPuffs(centerR);
   for (const p of puffs) p.r = water >= p.threshold ? p.baseR : 0;
+  puffs.sort((a, b) => b.baseR - a.baseR);
   clouds.push({
     angle, radius,
     phase:        Math.random() * Math.PI * 2,
@@ -1922,32 +2120,27 @@ function updateRain(dt) {
 }
 
 function drawRain() {
+  if (!window.pixiRainGfx) return;
+  const gfx = window.pixiRainGfx;
+  gfx.clear();
   if (rainParticles.length === 0) return;
-  ctx.save();
-  ctx.beginPath();
   for (const p of rainParticles) {
     if (!p.visible) continue;
-    ctx.moveTo(p.x + p.size, p.y);
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    gfx.circle(p.x, p.y, p.size);
   }
-  ctx.fillStyle = 'rgba(100,185,245,0.82)';
-  ctx.fill();
-  ctx.restore();
+  gfx.fill({ color: 0x64B9F5, alpha: 0.82 });
 }
 
 function drawSplash() {
+  if (!window.pixiSplashGfx) return;
+  const gfx = window.pixiSplashGfx;
+  gfx.clear();
   if (splashParticles.length === 0) return;
-  ctx.save();
-  // Two alpha passes avoids per-particle string building while still fading out
-  ctx.beginPath();
-  for (const s of splashParticles) if (s.life > 0.5) { ctx.moveTo(s.x + s.size, s.y); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); }
-  ctx.fillStyle = 'rgba(80,160,220,0.55)';
-  ctx.fill();
-  ctx.beginPath();
-  for (const s of splashParticles) if (s.life <= 0.5) { ctx.moveTo(s.x + s.size, s.y); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); }
-  ctx.fillStyle = 'rgba(80,160,220,0.22)';
-  ctx.fill();
-  ctx.restore();
+  // Two alpha passes — bright for fresh drops, dim for fading ones
+  for (const s of splashParticles) if (s.life > 0.5) gfx.circle(s.x, s.y, s.size);
+  gfx.fill({ color: 0x50A0DC, alpha: 0.55 });
+  for (const s of splashParticles) if (s.life <= 0.5) gfx.circle(s.x, s.y, s.size);
+  gfx.fill({ color: 0x50A0DC, alpha: 0.22 });
 }
 
 function updateEvaporation(dtSec) {
@@ -1975,15 +2168,10 @@ function drawWaterGlints() {
   const visCenter = ((Math.round(-rotation / (Math.PI * 2) * TILE_COUNT)) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
   ctx.save();
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + SURF_R + CAP_H + waveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + SURF_R + CAP_H, _wWave);
   ctx.clip();
 
+  ctx.fillStyle = '#ffffff';
   for (let di = -18; di <= 18; di++) {
     const i    = (visCenter + di + TILE_COUNT) % TILE_COUNT;
     const tile = tiles[i];
@@ -2006,12 +2194,13 @@ function drawWaterGlints() {
       const alpha   = shimmer * shimmer * 0.9;
       if (alpha < 0.02) continue;
 
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
       ctx.arc(gx, gy, g.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
       ctx.fill();
     }
   }
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
@@ -2130,7 +2319,20 @@ function spawnEvaporationCloud(tileIdx) {
   cloudSpawnDelay    = 5000 + Math.random() * 5000;
 }
 
+let _cloudOC = null, _cloudOCCtx = null, _cloudTex = null, _cloudSprite = null;
 function drawClouds() {
+  if (!window.pixiClouds) return;
+  // Lazy-init or reinit on resize
+  if (!_cloudOC || _cloudOC.width !== W || _cloudOC.height !== H) {
+    if (_cloudSprite) { _cloudSprite.destroy(); _cloudTex.destroy(true); }
+    _cloudOC    = new OffscreenCanvas(W, H);
+    _cloudOCCtx = _cloudOC.getContext('2d');
+    _cloudTex   = PIXI.Texture.from(_cloudOC);
+    _cloudSprite = new PIXI.Sprite(_cloudTex);
+    window.pixiClouds.addChild(_cloudSprite);
+  }
+  const oc = _cloudOCCtx;
+  oc.clearRect(0, 0, W, H);
   const t = lastTime * 0.00035;
   for (const c of clouds) {
     const sx  = CX + Math.sin(c.angle) * c.radius;
@@ -2140,9 +2342,9 @@ function drawClouds() {
     const ty  = Math.sin(c.angle);
     const nx  =  Math.sin(c.angle);
     const ny  = -Math.cos(c.angle);
-    const sortedPuffs = [...c.puffs].sort((a, b) => b.r - a.r);
     const shadowAlpha = 0.25 + (c.water > 80 ? Math.min(0.1, (c.water - 80) / 20 * 0.1) : 0);
-    for (const p of sortedPuffs) {
+    const shadowFill  = `rgba(0,0,0,${(shadowAlpha * 100 | 0) / 100})`;
+    for (const p of c.puffs) {
       if (p.r < 1) continue;
       const px        = sx + p.dx * tx + p.dy * nx;
       const py        = sy + p.dx * ty + p.dy * ny + bob;
@@ -2151,66 +2353,70 @@ function drawClouds() {
       const ry        = dr * 0.55;
       const puffAngle = Math.atan2(px - CX, CY - py);
       const sq        = p.squish || 0;
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(puffAngle);
-      ctx.scale(1 + sq * 0.75, 1 - sq * 0.50);
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
-      ctx.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
-      ctx.closePath();
-      ctx.fill();
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
-      ctx.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
-      ctx.closePath();
-      ctx.clip();
+      oc.save();
+      oc.translate(px, py);
+      oc.rotate(puffAngle);
+      oc.scale(1 + sq * 0.75, 1 - sq * 0.50);
+      oc.fillStyle = '#fff';
+      oc.beginPath();
+      oc.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
+      oc.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
+      oc.closePath();
+      oc.fill();
+      oc.save();
+      oc.beginPath();
+      oc.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
+      oc.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
+      oc.closePath();
+      oc.clip();
       const sunShiftScreen = (px - CX) / CX * dr * CLOUD_SHD_SUN;
       const puffSunX =  sunShiftScreen * Math.cos(puffAngle);
       const puffSunY = -sunShiftScreen * Math.sin(puffAngle);
-      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(2)})`;
-      ctx.beginPath();
-      ctx.arc(puffSunX, dr * CLOUD_SHD_OFFSET + puffSunY, dr * CLOUD_SHD_SCALE, 0, Math.PI * 3);
-      ctx.fill();
-      ctx.restore();
-      ctx.restore();
+      oc.fillStyle = shadowFill;
+      oc.beginPath();
+      oc.arc(puffSunX, dr * CLOUD_SHD_OFFSET + puffSunY, dr * CLOUD_SHD_SCALE, 0, Math.PI * 3);
+      oc.fill();
+      oc.restore();
+      oc.restore();
     }
     if (showNumbers && c.water > 0) {
-      ctx.save();
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      // place text below the cloud on the planet-facing side
+      oc.save();
+      oc.font = 'bold 12px monospace';
+      oc.textAlign = 'center';
+      oc.textBaseline = 'top';
+      oc.fillStyle = 'rgba(255,255,255,0.85)';
       const textX = sx + (-nx) * c.centerR * 1.4;
       const textY = sy + bob + (-ny) * c.centerR * 1.4;
-      ctx.fillText(Math.ceil(c.water), textX, textY);
-      ctx.restore();
+      oc.fillText(Math.ceil(c.water), textX, textY);
+      oc.restore();
     }
   }
+  _cloudTex.source.update();
 }
 
 
 // ── SCENE ─────────────────────────────────────────────────────────────────────
 function drawSky() {
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#1055a0'); g.addColorStop(0.35, '#3498c8');
-  g.addColorStop(0.72, '#7dd0f0'); g.addColorStop(1, '#a8e4f7');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (!_skyGrad) {
+    _skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    _skyGrad.addColorStop(0, '#1055a0'); _skyGrad.addColorStop(0.35, '#3498c8');
+    _skyGrad.addColorStop(0.72, '#7dd0f0'); _skyGrad.addColorStop(1, '#a8e4f7');
+  }
+  ctx.fillStyle = _skyGrad; ctx.fillRect(0, 0, W, H);
 }
 
 function drawSun() {
   const cx = CX, cy = SUN_CY, r = SUN_R;
 
   // Outer bloom
-  const bloom = ctx.createRadialGradient(cx, cy, r*0.5, cx, cy, r*5);
-  bloom.addColorStop(0,    'rgba(255,245,100,0.50)');
-  bloom.addColorStop(0.3,  'rgba(255,180,30,0.20)');
-  bloom.addColorStop(0.65, 'rgba(220,80,0,0.07)');
-  bloom.addColorStop(1,    'rgba(180,20,0,0)');
-  ctx.fillStyle = bloom; ctx.beginPath(); ctx.arc(cx, cy, r*5, 0, Math.PI*2); ctx.fill();
+  if (!_sunBloom) {
+    _sunBloom = ctx.createRadialGradient(cx, cy, r*0.5, cx, cy, r*5);
+    _sunBloom.addColorStop(0,    'rgba(255,245,100,0.50)');
+    _sunBloom.addColorStop(0.3,  'rgba(255,180,30,0.20)');
+    _sunBloom.addColorStop(0.65, 'rgba(220,80,0,0.07)');
+    _sunBloom.addColorStop(1,    'rgba(180,20,0,0)');
+  }
+  ctx.fillStyle = _sunBloom; ctx.beginPath(); ctx.arc(cx, cy, r*5, 0, Math.PI*2); ctx.fill();
 
   // 4 spinning corona circles — randomized size/phase/speed on load
   const ot = lastTime * 0.00034; // rotation speed
@@ -2233,21 +2439,25 @@ function drawSun() {
   }
 
   // Sun body: white center → majority yellow → thin orange-yellow rim
-  const sg = ctx.createRadialGradient(cx - r*0.28, cy - r*0.28, r*0.06, cx, cy, r);
-  sg.addColorStop(0,    '#ffffff');
-  sg.addColorStop(0.38, '#fffbe8');
-  sg.addColorStop(0.70, '#ffe030');
-  sg.addColorStop(0.93, '#ffb300');
-  sg.addColorStop(1,    '#ff8800');
-  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  if (!_sunGrad) {
+    _sunGrad = ctx.createRadialGradient(cx - r*0.28, cy - r*0.28, r*0.06, cx, cy, r);
+    _sunGrad.addColorStop(0,    '#ffffff');
+    _sunGrad.addColorStop(0.38, '#fffbe8');
+    _sunGrad.addColorStop(0.70, '#ffe030');
+    _sunGrad.addColorStop(0.93, '#ffb300');
+    _sunGrad.addColorStop(1,    '#ff8800');
+  }
+  ctx.fillStyle = _sunGrad; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
 }
 
 function drawPlanetBody() {
-  const g = ctx.createLinearGradient(0, CY-R, 0, CY+R);
-  g.addColorStop(0, '#5c3d1e'); g.addColorStop(0.4, '#3d2510'); g.addColorStop(1, '#1a0f06');
+  if (!_planetGrad) {
+    _planetGrad = ctx.createLinearGradient(0, CY-R, 0, CY+R);
+    _planetGrad.addColorStop(0, '#5c3d1e'); _planetGrad.addColorStop(0.4, '#3d2510'); _planetGrad.addColorStop(1, '#1a0f06');
+  }
   ctx.beginPath();
   ctx.arc(CX, CY, R + SURF_R, 0, Math.PI * 2);
-  ctx.fillStyle = g;
+  ctx.fillStyle = _planetGrad;
   ctx.fill();
 }
 
@@ -2266,18 +2476,13 @@ let SHADOW_ALPHA = 0.18;  // multiply darkness
 function drawPlanetCover() {
   const coverR  = (R + SURF_R) * COVER_SCALE;
   const rOffset = coverR - R; // offset from base circle R, may be negative
-  const g = ctx.createLinearGradient(0, CY - R, 0, CY + R);
-  g.addColorStop(0, '#5c3d1e'); g.addColorStop(0.4, '#3d2510'); g.addColorStop(1, '#1a0f06');
-
-  ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  if (!_planetGrad) {
+    _planetGrad = ctx.createLinearGradient(0, CY - R, 0, CY + R);
+    _planetGrad.addColorStop(0, '#5c3d1e'); _planetGrad.addColorStop(0.4, '#3d2510'); _planetGrad.addColorStop(1, '#1a0f06');
   }
-  ctx.closePath();
-  ctx.fillStyle = g;
+  ctx.beginPath();
+  _ringPath(R + rOffset, _wCover);
+  ctx.fillStyle = _planetGrad;
   ctx.fill();
   ctx.strokeStyle = 'rgba(50, 20, 0, 1)';
   ctx.lineWidth = 1;
@@ -2289,13 +2494,7 @@ function drawPlanetShadow() {
   const rOffset = shadowR - R;
 
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + shadowWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wShadow);
 
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
@@ -2644,13 +2843,7 @@ function drawRocks() {
   ctx.save();
   // Clip to planet cover boundary — keeps rocks off tile surfaces
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wCover);
   ctx.clip();
   ctx.translate(CX, CY);
   ctx.rotate(rotation);
@@ -2719,25 +2912,13 @@ function drawCrustDots() {
   ctx.save();
   // Clip 1: outer planet surface — hard outer boundary
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + SURF_R + CAP_H + waveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + SURF_R + CAP_H, _wWave);
   ctx.clip();
   // Clip 2: crust circle (full 360°) UNION non-water tile surface wedges.
   // One combined path — nonzero winding gives the union of both regions.
   ctx.beginPath();
   // Crust: inside cover boundary, all the way around
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wCover);
   // Non-water tile surface wedges, from cover level outward (above crust)
   const rIn  = coverR;
   const rOut = R + SURF_R + CAP_H + 100;
@@ -2770,23 +2951,11 @@ function drawCoverSpots() {
   ctx.save();
   // Clip 1: outer planet surface
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + SURF_R + CAP_H + waveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + SURF_R + CAP_H, _wWave);
   ctx.clip();
   // Clip 2: crust only — no tile wedges, so spots stay below tile surfaces
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wCover);
   ctx.clip();
   ctx.translate(CX, CY);
   ctx.rotate(rotation);
@@ -2804,13 +2973,7 @@ function drawCoverInsetShadow() {
   ctx.save();
 
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wCover);
   ctx.clip();
 
   ctx.translate(10000, 0);
@@ -2822,13 +2985,7 @@ function drawCoverInsetShadow() {
   ctx.lineWidth     = INSET_WIDTH;
 
   ctx.beginPath();
-  for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + rOffset + coverWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+  _ringPath(R + rOffset, _wCover);
   ctx.stroke();
 
   ctx.restore();
@@ -2837,6 +2994,7 @@ function drawCoverInsetShadow() {
 // ── TILE NUMBERS ─────────────────────────────────────────────────────────────
 // Drawn on the grass canvas (gctx) so it sits above the grass layer
 function drawTileNumbers() {
+  gctx.clearRect(0, 0, W, H); // clear every frame — old drawGrassBlades() did this
   if (!showNumbers) return;
   // FPS counter — top-left corner
   const fps = Math.round(_fpsAvg);
@@ -2879,9 +3037,9 @@ function drawTileNumbers() {
 
 // ── HALO ─────────────────────────────────────────────────────────────────────
 // Outer circle
-let HALO_SCALE   = 1.195;
-let HALO_ALPHA   = 0.13;
-let hWaveAmp     = 22.99035574336424,  hWaveFreq = 29, hDetAmp = 9.5, hDetFreq = 38, hExtraFreq = 15;
+let HALO_SCALE   = 1.21;
+let HALO_ALPHA   = 0.25;
+let hWaveAmp     = 2.4223631506575067,  hWaveFreq = 16, hDetAmp = 17.5, hDetFreq = 75, hExtraFreq = 39;
 const hPhase     = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hExtraPhase = Math.random()*Math.PI*2;
 function haloWaveAt(a) {
@@ -2893,9 +3051,9 @@ function haloWaveAt(a) {
 }
 
 // Cutout circle
-let HALO_CUT_SCALE = 1.265;
-let HALO_OFFSET    = 48;
-let hcWaveAmp = 21.058270777058866, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
+let HALO_CUT_SCALE = 1.21;
+let HALO_OFFSET    = 300;
+let hcWaveAmp = 28.026588475078306, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
 const hcPhase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hcExtraPhase = Math.random()*Math.PI*2;
 function haloCutWaveAt(a) {
@@ -2916,7 +3074,7 @@ const _hAmpS2     = _hAmpS1.map(s => s * 1.618);
 // Listeners — outer
 document.getElementById('sHScale').addEventListener('input', e => { HALO_SCALE  = +e.target.value/100; document.getElementById('vHScale').textContent  = e.target.value+'%'; });
 document.getElementById('sHAlpha').addEventListener('input', e => { HALO_ALPHA  = +e.target.value/100; document.getElementById('vHAlpha').textContent  = e.target.value+'%'; });
-document.getElementById('sHAmp')  .addEventListener('input', e => { hWaveAmp    = +e.target.value;     document.getElementById('vHAmp').textContent    = hWaveAmp; });
+document.getElementById('sHAmp')  .addEventListener('input', e => { _hAmpBases[0] = +e.target.value;   document.getElementById('vHAmp').textContent    = +e.target.value; });
 document.getElementById('sHFreq') .addEventListener('input', e => { hWaveFreq   = +e.target.value;     document.getElementById('vHFreq').textContent   = hWaveFreq; });
 document.getElementById('sHDet')  .addEventListener('input', e => { hDetAmp     = +e.target.value;     document.getElementById('vHDet').textContent    = hDetAmp; });
 document.getElementById('sHDFr')  .addEventListener('input', e => { hDetFreq    = +e.target.value;     document.getElementById('vHDFr').textContent    = hDetFreq; });
@@ -2924,35 +3082,35 @@ document.getElementById('sHEFq')  .addEventListener('input', e => { hExtraFreq  
 // Listeners — cutout
 document.getElementById('sHCScale').addEventListener('input', e => { HALO_CUT_SCALE = +e.target.value/100; document.getElementById('vHCScale').textContent = e.target.value+'%'; });
 document.getElementById('sHOff')   .addEventListener('input', e => { HALO_OFFSET    = +e.target.value;     document.getElementById('vHOff').textContent    = HALO_OFFSET; });
-document.getElementById('sHCAmp')  .addEventListener('input', e => { hcWaveAmp   = +e.target.value; document.getElementById('vHCAmp').textContent  = hcWaveAmp; });
+document.getElementById('sHCAmp')  .addEventListener('input', e => { _hAmpBases[1] = +e.target.value; document.getElementById('vHCAmp').textContent  = +e.target.value; });
 document.getElementById('sHCFreq') .addEventListener('input', e => { hcWaveFreq  = +e.target.value; document.getElementById('vHCFreq').textContent = hcWaveFreq; });
 document.getElementById('sHCDet')  .addEventListener('input', e => { hcDetAmp    = +e.target.value; document.getElementById('vHCDet').textContent  = hcDetAmp; });
 document.getElementById('sHCDFr')  .addEventListener('input', e => { hcDetFreq   = +e.target.value; document.getElementById('vHCDFr').textContent  = hcDetFreq; });
 document.getElementById('sHCEFq')  .addEventListener('input', e => { hcExtraFreq = +e.target.value; document.getElementById('vHCEFq').textContent  = hcExtraFreq; });
 document.getElementById('sH2Scale') .addEventListener('input', e => { HALO2_SCALE     = +e.target.value/100; document.getElementById('vH2Scale').textContent  = e.target.value+'%'; });
 document.getElementById('sH2Alpha') .addEventListener('input', e => { HALO2_ALPHA     = +e.target.value/100; document.getElementById('vH2Alpha').textContent  = e.target.value+'%'; });
-document.getElementById('sH2Amp')   .addEventListener('input', e => { h2WaveAmp       = +e.target.value;     document.getElementById('vH2Amp').textContent    = h2WaveAmp; });
+document.getElementById('sH2Amp')   .addEventListener('input', e => { _hAmpBases[2]   = +e.target.value;     document.getElementById('vH2Amp').textContent    = +e.target.value; });
 document.getElementById('sH2Freq')  .addEventListener('input', e => { h2WaveFreq      = +e.target.value;     document.getElementById('vH2Freq').textContent   = h2WaveFreq; });
 document.getElementById('sH2Det')   .addEventListener('input', e => { h2DetAmp        = +e.target.value;     document.getElementById('vH2Det').textContent    = h2DetAmp; });
 document.getElementById('sH2DFr')   .addEventListener('input', e => { h2DetFreq       = +e.target.value;     document.getElementById('vH2DFr').textContent    = h2DetFreq; });
 document.getElementById('sH2EFq')   .addEventListener('input', e => { h2ExtraFreq     = +e.target.value;     document.getElementById('vH2EFq').textContent    = h2ExtraFreq; });
 document.getElementById('sH2CScale').addEventListener('input', e => { HALO2_CUT_SCALE = +e.target.value/100; document.getElementById('vH2CScale').textContent = e.target.value+'%'; });
 document.getElementById('sH2Off')   .addEventListener('input', e => { HALO2_OFFSET    = +e.target.value;     document.getElementById('vH2Off').textContent    = HALO2_OFFSET; });
-document.getElementById('sH2CAmp')  .addEventListener('input', e => { h2cWaveAmp      = +e.target.value;     document.getElementById('vH2CAmp').textContent   = h2cWaveAmp; });
+document.getElementById('sH2CAmp')  .addEventListener('input', e => { _hAmpBases[3]   = +e.target.value;     document.getElementById('vH2CAmp').textContent   = +e.target.value; });
 document.getElementById('sH2CFreq') .addEventListener('input', e => { h2cWaveFreq     = +e.target.value;     document.getElementById('vH2CFreq').textContent  = h2cWaveFreq; });
 document.getElementById('sH2CDet')  .addEventListener('input', e => { h2cDetAmp       = +e.target.value;     document.getElementById('vH2CDet').textContent   = h2cDetAmp; });
 document.getElementById('sH2CDFr')  .addEventListener('input', e => { h2cDetFreq      = +e.target.value;     document.getElementById('vH2CDFr').textContent   = h2cDetFreq; });
 document.getElementById('sH2CEFq')  .addEventListener('input', e => { h2cExtraFreq    = +e.target.value;     document.getElementById('vH2CEFq').textContent   = h2cExtraFreq; });
 document.getElementById('sH3Scale') .addEventListener('input', e => { HALO3_SCALE     = +e.target.value/100; document.getElementById('vH3Scale').textContent  = e.target.value+'%'; });
 document.getElementById('sH3Alpha') .addEventListener('input', e => { HALO3_ALPHA     = +e.target.value/100; document.getElementById('vH3Alpha').textContent  = e.target.value+'%'; });
-document.getElementById('sH3Amp')   .addEventListener('input', e => { h3WaveAmp       = +e.target.value;     document.getElementById('vH3Amp').textContent    = h3WaveAmp; });
+document.getElementById('sH3Amp')   .addEventListener('input', e => { _hAmpBases[4]   = +e.target.value;     document.getElementById('vH3Amp').textContent    = +e.target.value; });
 document.getElementById('sH3Freq')  .addEventListener('input', e => { h3WaveFreq      = +e.target.value;     document.getElementById('vH3Freq').textContent   = h3WaveFreq; });
 document.getElementById('sH3Det')   .addEventListener('input', e => { h3DetAmp        = +e.target.value;     document.getElementById('vH3Det').textContent    = h3DetAmp; });
 document.getElementById('sH3DFr')   .addEventListener('input', e => { h3DetFreq       = +e.target.value;     document.getElementById('vH3DFr').textContent    = h3DetFreq; });
 document.getElementById('sH3EFq')   .addEventListener('input', e => { h3ExtraFreq     = +e.target.value;     document.getElementById('vH3EFq').textContent    = h3ExtraFreq; });
 document.getElementById('sH3CScale').addEventListener('input', e => { HALO3_CUT_SCALE = +e.target.value/100; document.getElementById('vH3CScale').textContent = e.target.value+'%'; });
 document.getElementById('sH3Off')   .addEventListener('input', e => { HALO3_OFFSET    = +e.target.value;     document.getElementById('vH3Off').textContent    = HALO3_OFFSET; });
-document.getElementById('sH3CAmp')  .addEventListener('input', e => { h3cWaveAmp      = +e.target.value;     document.getElementById('vH3CAmp').textContent   = h3cWaveAmp; });
+document.getElementById('sH3CAmp')  .addEventListener('input', e => { _hAmpBases[5]   = +e.target.value;     document.getElementById('vH3CAmp').textContent   = +e.target.value; });
 document.getElementById('sH3CFreq') .addEventListener('input', e => { h3cWaveFreq     = +e.target.value;     document.getElementById('vH3CFreq').textContent  = h3cWaveFreq; });
 document.getElementById('sH3CDet')  .addEventListener('input', e => { h3cDetAmp       = +e.target.value;     document.getElementById('vH3CDet').textContent   = h3cDetAmp; });
 document.getElementById('sH3CDFr')  .addEventListener('input', e => { h3cDetFreq      = +e.target.value;     document.getElementById('vH3CDFr').textContent   = h3cDetFreq; });
@@ -2973,19 +3131,17 @@ function drawHalo(rot = rotation, shiftX = 0) {
   ctx.save();
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + outerROffset + haloWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + outerROffset + _wH[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + haloCutWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = (CY + HALO_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + cutROffset + _wHC[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = (CY + HALO_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO_ALPHA})`;
   ctx.fill('evenodd');
   ctx.restore();
@@ -2999,19 +3155,17 @@ function drawHalo2(rot = rotation, shiftX = 0) {
   ctx.save();
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + outerROffset + halo2WaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + outerROffset + _wH2[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + halo2CutWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = (CY + HALO2_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + cutROffset + _wH2C[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = (CY + HALO2_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO2_ALPHA})`;
   ctx.fill('evenodd');
   ctx.restore();
@@ -3025,19 +3179,17 @@ function drawHalo3(rot = rotation, shiftX = 0) {
   ctx.save();
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + outerROffset + halo3WaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + outerROffset + _wH3[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + halo3CutWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    const y = (CY + HALO3_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + cutROffset + _wH3C[s];
+    _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
+    _hYs[s] = (CY + HALO3_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO3_ALPHA})`;
   ctx.fill('evenodd');
   ctx.restore();
@@ -3095,19 +3247,17 @@ function drawDarkHalo() {
   ctx.save();
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + outerROffset + darkHaloWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + outerROffset + _wDH[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + darkHaloCutWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + cutROffset + _wDHC[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = 'rgba(53, 35, 22, 0.4)';
   ctx.fill('evenodd');
 
@@ -3162,19 +3312,17 @@ function drawDarkHalo2() {
   ctx.save();
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + outerROffset + darkHalo2WaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + outerROffset + _wDH2[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + darkHalo2CutWaveAt((s / WAVE_SEGS) * Math.PI * 2);
-    const x = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
-    const y = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
-    s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    const r = R + cutROffset + _wDH2C[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
-  ctx.closePath();
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = 'rgba(61, 38, 20, 0.5)';
   ctx.fill('evenodd');
 
@@ -3236,7 +3384,7 @@ function floodTile(type) {
         while (tiles[ni].bladesByRow[row].length < MAX_BLADES) {
           tiles[ni].bladesByRow[row].push({ offsetFrac: pickBladeFrac(tiles[ni].bladesByRow[row], ROW_STAGGER[row]),
             growth: 1, growthRate: GROW_MIN + Math.random()*(GROW_MAX-GROW_MIN), growDelay: 0,
-            scaleVar: 0.8+Math.random()*0.4, lateralVar:(Math.random()-0.5)*0.06,
+            scaleVar: 0.8+Math.random()*0.4, lateralVar:0,
             radialVar:(Math.random()-0.5)*8, swayPhase:Math.random()*Math.PI*2 });
         }
         for (const b of tiles[ni].bladesByRow[row]) b.growth = 1;
@@ -3258,7 +3406,7 @@ function fullGrassTile() {
       while (t.bladesByRow[row].length < MAX_BLADES) {
         t.bladesByRow[row].push({ offsetFrac: pickBladeFrac(t.bladesByRow[row], ROW_STAGGER[row]),
           growth: 8, growthRate: GROW_MIN + Math.random()*(GROW_MAX-GROW_MIN), growDelay: 0,
-          scaleVar: 0.8+Math.random()*0.4, lateralVar:(Math.random()-0.5)*0.06,
+          scaleVar: 0.8+Math.random()*0.4, lateralVar:0,
           radialVar:(Math.random()-0.5)*8, swayPhase:Math.random()*Math.PI*2 });
       }
       for (const b of t.bladesByRow[row]) { b.growth = 8; b.growDelay = 0; }
@@ -3328,7 +3476,7 @@ function seedFromTap(tileIdx, tile) {
           growthRate:  GROW_MIN + Math.random() * (GROW_MAX - GROW_MIN),
           growDelay:   0,
           scaleVar:    0.8 + Math.random() * 0.4,
-          lateralVar:  (Math.random() - 0.5) * 0.06,
+          lateralVar:  0,
           radialVar:   (Math.random() - 0.5) * 8,
           swayPhase:   Math.random() * Math.PI * 2,
         });
@@ -3608,6 +3756,8 @@ function saveDefaults() {
     ['sH3CDet',    'h3cDetAmp',          h3cDetAmp],
     ['sH3CDFr',    'h3cDetFreq',         h3cDetFreq],
     ['sH3CEFq',    'h3cExtraFreq',       h3cExtraFreq],
+    ['sCloudLift',    'CLOUD_LIFT',        CLOUD_LIFT],
+    ['sCloudSpread',  'CLOUD_SPREAD',      CLOUD_SPREAD],
     ['sGWWaveFreq',   'GRASS_BASE_FREQ',  GRASS_BASE_FREQ],
     ['sGWLeanSmooth', 'LEAN_SMOOTH',      LEAN_SMOOTH],
     ['sGWWindSens',   'BLADE_WIND_SENS',  BLADE_WIND_SENS],
@@ -3740,6 +3890,17 @@ function smoothRingPath(xs, ys) {
     const ns = (s + 1) % n;
     ctx.quadraticCurveTo(xs[s], ys[s], (xs[s] + xs[ns]) * 0.5, (ys[s] + ys[ns]) * 0.5);
   }
+}
+// Builds a smooth closed ring path in the planet's rotating coordinate system.
+// baseR = base radius (constant for this path), waveTable = pre-computed wave offsets.
+function _ringPath(baseR, waveTable) {
+  for (let s = 0; s < WAVE_SEGS; s++) {
+    const r = baseR + waveTable[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
+  }
+  smoothRingPath(_hXs, _hYs);
+  ctx.closePath();
 }
 
 function drawGreenRingRear() {
@@ -3989,6 +4150,96 @@ function drawCreature(c) {
   }
 }
 
+// ── WAVE LOOKUP TABLES ────────────────────────────────────────────────────────
+// Rebuilds pre-computed wave offset arrays. Called every 4 frames — halo drift
+// is too slow to notice a 4-frame lag, but this cuts ~40,000 sin() calls/frame
+// down to ~10,000 amortised.
+function _rebuildWaveTables() {
+  for (let s = 0; s < WAVE_SEGS; s++) {
+    const a = (s / WAVE_SEGS) * Math.PI * 2;
+    _wWave[s]  = waveAt(a);
+    _wCover[s] = coverWaveAt(a);
+    _wShadow[s]= shadowWaveAt(a);
+    _wH[s]   = haloWaveAt(a);      _wHC[s]   = haloCutWaveAt(a);
+    _wH2[s]  = halo2WaveAt(a);     _wH2C[s]  = halo2CutWaveAt(a);
+    _wH3[s]  = halo3WaveAt(a);     _wH3C[s]  = halo3CutWaveAt(a);
+    _wDH[s]  = darkHaloWaveAt(a);  _wDHC[s]  = darkHaloCutWaveAt(a);
+    _wDH2[s] = darkHalo2WaveAt(a); _wDH2C[s] = darkHalo2CutWaveAt(a);
+  }
+}
+// Ensure tables are populated before the first draw
+_rebuildWaveTables();
+
+// ── WORLD LAYER (Phases 6+7+8) ───────────────────────────────────────────────
+// Sky, sun, birds, and all planet geometry rendered to one OffscreenCanvas →
+// one PixiJS sprite. Single opaque texture = no alpha-compositing seam between
+// two sprites (which caused the faint diagonal line).
+let _planetOC = null, _planetOCCtx = null, _planetOCTex = null, _planetOCSprite = null;
+function _drawPlanetLayer() {
+  if (!window.pixiPlanet) return;
+  if (!_planetOC || _planetOC.width !== W || _planetOC.height !== H) {
+    if (_planetOCSprite) { _planetOCSprite.destroy(); _planetOCTex.destroy(true); }
+    _planetOC       = new OffscreenCanvas(W, H);
+    _planetOCCtx    = _planetOC.getContext('2d');
+    _planetOCTex    = PIXI.Texture.from(_planetOC);
+    _planetOCSprite = new PIXI.Sprite(_planetOCTex);
+    window.pixiPlanet.addChildAt(_planetOCSprite, 0);
+    // Force all cached gradients to re-create on the new context
+    _planetGrad = null;
+    _skyGrad = null; _sunBloom = null; _sunGrad = null;
+  }
+  const _saveCtx = ctx;
+  ctx = _planetOCCtx;
+  ctx.clearRect(0, 0, W, H);
+  drawSky();            // opaque sky background — fills canvas so no transparent seams
+  drawSun();
+  drawBirds();
+  drawHalo(haloRotation);
+  drawPlanetBody();
+  drawGreenRingRear();
+  drawHalo2(halo2Rotation);
+  drawGreenRing();
+  drawHalo3(halo3Rotation);
+  drawTiles();
+  drawWaterGlints();
+  drawPlanetCover();
+  drawDarkHalo2();
+  drawDarkHalo();
+  drawCoverSpots();
+  drawCrustDots();
+  drawRocks();
+  drawGroundItems(ctx);
+  drawCoverInsetShadow();
+  drawPlanetShadow();
+  ctx = _saveCtx;
+  _planetOCTex.source.update();
+}
+
+// ── OVERLAY LAYER (Phase 7 fix) ───────────────────────────────────────────────
+// Evaporation, tile particles, and side shadows still use Canvas2D, but ctx is
+// now covered by the opaque sky sprite in PixiJS. Route them to an OffscreenCanvas
+// sprite in uiContainer so they appear above everything else in the PixiJS stack.
+let _uiOC = null, _uiOCCtx = null, _uiOCTex = null, _uiOCSprite = null;
+function _drawOverlayLayer(dt) {
+  if (!window.pixiUI) { drawEvaporation(); updateDrawTileParticles(dt); drawSideShadows(); return; }
+  if (!_uiOC || _uiOC.width !== W || _uiOC.height !== H) {
+    if (_uiOCSprite) { _uiOCSprite.destroy(); _uiOCTex.destroy(true); }
+    _uiOC       = new OffscreenCanvas(W, H);
+    _uiOCCtx    = _uiOC.getContext('2d');
+    _uiOCTex    = PIXI.Texture.from(_uiOC);
+    _uiOCSprite = new PIXI.Sprite(_uiOCTex);
+    window.pixiUI.addChild(_uiOCSprite);
+  }
+  const _saveCtx = ctx;
+  ctx = _uiOCCtx;
+  ctx.clearRect(0, 0, W, H);
+  drawEvaporation();
+  updateDrawTileParticles(dt);
+  drawSideShadows();
+  ctx = _saveCtx;
+  _uiOCTex.source.update();
+}
+
 // ── LOOP ──────────────────────────────────────────────────────────────────────
 function loop(time) {
   requestAnimationFrame(loop);
@@ -4057,6 +4308,7 @@ function loop(time) {
     h2cWaveAmp = _hd(3);
     h3WaveAmp  = _hd(4);
     h3cWaveAmp = _hd(5); }
+  _rebuildWaveTables();
 
   frameNow = time;
   if (grassBoostMs > 0) {
@@ -4111,36 +4363,14 @@ function loop(time) {
     }
   }
   // Draw order — each layer paints on top of the previous one:
-  ctx.clearRect(0, 0, W, H);
-  drawSky();              // gradient background
-  drawSun();              // glowing disc + spinning corona rings
-  drawBirds();            // small silhouette birds in the sky
-  drawHalo(haloRotation);  // outer atmospheric glow (reacts to wind)
-  drawPlanetBody();        // solid brown sphere fill
-  drawGreenRingRear();     // rear hill silhouette (moves slower = parallax depth)
-  drawHalo2(halo2Rotation);
-  drawGreenRing();         // front hill silhouette
-  drawHalo3(halo3Rotation);
-  drawTiles();            // coloured land tiles (grass/dirt/water)
-  drawWaterGlints();      // shimmering sun spots on water
-  drawPlanetCover();      // smooth brown disc that clips tile bottoms into the curve
-  drawDarkHalo2();        // inner dark strata ring (second layer)
-  drawDarkHalo();         // inner dark strata ring (first layer)
-  drawCoverSpots();       // dark organic blotches — crust only, never over tiles
-  drawCrustDots(); // tiny speckle texture over tiles + strata + body
-  drawRocks();            // rocks on top of the dot texture
-  drawGroundItems(ctx);   // rubies and bones sitting in the crust
-  drawCoverInsetShadow(); // shadow along the wavy crust edge, makes tiles look raised
-  drawPlanetShadow();     // large soft shadow on the night side of the planet
+  _drawPlanetLayer();      // sky + sun + birds + planet → single PixiJS sprite
   drawGrassBlades();      // individual grass blades + creature (on the separate grass canvas)
   drawTileNumbers();      // debug water/tile numbers (shown when "Show #" is on)
-  drawEvaporation(); // curvy rising lines from water tiles when clouds form
-  drawRain();             // falling raindrops
-  drawSplash();           // impact splatter
-  drawClouds();           // cloud puffs with their own shadow
-  updateDrawTileParticles(dt); // click particles (dots/lines from tile taps)
-  drawSideShadows();      // dark vignette wedges on left and right edges
-  drawButterflies();      // butterflies on top of everything
+  drawRain();              // falling raindrops (PixiJS weatherContainer)
+  drawSplash();            // impact splatter (PixiJS weatherContainer)
+  drawClouds();            // cloud puffs with their own shadow (PixiJS cloudsContainer)
+  _drawOverlayLayer(dt);   // evaporation, click particles, side shadows → PixiJS uiContainer
+  drawButterflies();       // butterflies on top of everything (btf canvas)
 }
 // Spawn pre-built clouds around the planet at startup — no simulation needed
 (function initClouds() {
@@ -4150,8 +4380,8 @@ function loop(time) {
     const angle   = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
     const lower   = Math.random() < 0.3;
     const radius  = lower
-      ? baseRadius + CLOUD_LIFT - 65 - Math.random() * 250
-      : baseRadius + CLOUD_LIFT - 60 + Math.random() * 20;
+      ? baseRadius + CLOUD_LIFT - 65 - Math.random() * CLOUD_SPREAD * 2
+      : baseRadius + CLOUD_LIFT - 60 + Math.random() * CLOUD_SPREAD;
     const centerR = 45 + Math.random() * 25;
     const water   = 60 + Math.random() * 40;
     const puffs   = buildCloudPuffs(centerR);
@@ -4172,6 +4402,121 @@ function loop(time) {
 // Seed a few butterflies at startup
 for (let _i = 0; _i < 3; _i++) spawnButterfly(true);
 loop(performance.now());
+
+// ── PIXI FOUNDATION (Phase 1) ─────────────────────────────────────────────────
+// PixiJS renders via WebGL into its own canvas, which we layer on top of the
+// existing Canvas2D canvases (c, gc, btf). During the migration each system
+// moves from Canvas2D into the PixiJS stage; once all systems are moved the
+// old canvases get removed. For now the PixiJS canvas is transparent and empty.
+(async function initPixi() {
+  const app = new PIXI.Application();
+  await app.init({
+    width:           W,
+    height:          H,
+    backgroundAlpha: 0,       // fully transparent — Canvas2D layers show through
+    antialias:       true,
+    autoDensity:     true,    // handles hi-DPI screens automatically
+    resolution:      window.devicePixelRatio || 1,
+  });
+
+  // DOM order: c (opacity:0, events) → PixiJS (world) → gc (tile numbers) → btf (butterflies)
+  // gc must sit above the PixiJS canvas so tile numbers aren't hidden by the opaque planet sprite.
+  const pc = app.canvas;
+  pc.style.cssText = `position:absolute;top:0;left:0;width:${W}px;height:${H}px;pointer-events:none;`;
+  const game = document.getElementById('game');
+  game.insertBefore(pc, btfCanvas);
+  game.insertBefore(grassCanvas, btfCanvas); // move gc above PixiJS
+
+  // ── Container hierarchy ───────────────────────────────────────────────────
+  // This mirrors the drawing order in the game loop.  Each container is empty
+  // for now; future phases move systems into their matching container.
+  const backgroundContainer  = new PIXI.Container(); // sky, sun
+  const rearHillsContainer   = new PIXI.Container(); // parallax rear hills
+  const halosContainer       = new PIXI.Container(); // atmosphere halos
+  const tilesContainer       = new PIXI.Container(); // grass/dirt/water arcs
+  const waterContainer       = new PIXI.Container(); // water glints
+  const planetCoverContainer = new PIXI.Container(); // smooth planet disc + shadows
+  const strataContainer      = new PIXI.Container(); // dark strata rings, dot texture
+  const groundItemsContainer = new PIXI.Container(); // rubies, bones, skulls
+  const backGrassContainer   = new PIXI.Container(); // grass rows 3+2 (behind creature)
+  const creatureContainer    = new PIXI.Container(); // the creature sprite
+  const frontGrassContainer  = new PIXI.Container(); // grass rows 1+0 (in front of creature)
+  const weatherContainer     = new PIXI.Container(); // rain, evaporation, splash
+  const cloudsContainer      = new PIXI.Container(); // cloud puffs
+  const butterflyContainer   = new PIXI.Container(); // butterflies
+  const uiContainer          = new PIXI.Container(); // debug tile numbers
+
+  // Grass containers need depth-sorting so back blades render behind front blades
+  backGrassContainer.sortableChildren  = true;
+  frontGrassContainer.sortableChildren = true;
+
+  // Planet container groups everything that sits on/around the planet surface
+  const planetContainer = new PIXI.Container();
+  planetContainer.addChild(
+    rearHillsContainer,
+    halosContainer,
+    tilesContainer,
+    waterContainer,
+    planetCoverContainer,
+    strataContainer,
+    groundItemsContainer,
+    backGrassContainer,
+    creatureContainer,
+    frontGrassContainer,
+  );
+
+  const rainGfx   = new PIXI.Graphics(); // rain drops
+  const splashGfx = new PIXI.Graphics(); // splash dots on impact
+  weatherContainer.addChild(rainGfx, splashGfx);
+
+  app.stage.addChild(
+    backgroundContainer,
+    planetContainer,
+    weatherContainer,
+    cloudsContainer,
+    butterflyContainer,
+    uiContainer,
+  );
+
+  // ── Global refs for future phases ─────────────────────────────────────────
+  // Each phase will import the relevant container and use it instead of gctx/ctx.
+  window.pixiApp        = app;
+  window.pixiBG         = backgroundContainer;
+  window.pixiPlanet     = planetContainer;
+  window.pixiRearHills  = rearHillsContainer;
+  window.pixiHalos      = halosContainer;
+  window.pixiTiles      = tilesContainer;
+  window.pixiWater      = waterContainer;
+  window.pixiPlanetCover = planetCoverContainer;
+  window.pixiStrata     = strataContainer;
+  window.pixiGroundItems = groundItemsContainer;
+  window.pixiBackGrass  = backGrassContainer;
+  window.pixiCreature   = creatureContainer;
+  window.pixiFrontGrass = frontGrassContainer;
+  window.pixiWeather    = weatherContainer;
+  window.pixiRainGfx    = rainGfx;
+  window.pixiSplashGfx  = splashGfx;
+  window.pixiClouds     = cloudsContainer;
+  window.pixiButterflies = butterflyContainer;
+  window.pixiUI         = uiContainer;
+
+  // ── Resize integration ────────────────────────────────────────────────────
+  // Wrap the existing layout() so PixiJS renderer resizes alongside the Canvas2D canvases.
+  const _origLayout = window.layout;
+  window.layout = function() {
+    _origLayout();
+    app.renderer.resize(W, H);
+    pc.style.width  = W + 'px';
+    pc.style.height = H + 'px';
+  };
+
+  // Phase 8: The original ctx canvas no longer renders anything visually,
+  // but all pointer events are attached to it so it must stay in the DOM.
+  // Make it transparent so the PixiJS canvas shows through.
+  canvas.style.opacity = '0';
+
+  console.log('[PixiJS] Migration complete — all rendering through PixiJS');
+})();
 </script>
 
 
