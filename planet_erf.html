@@ -72,13 +72,14 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 22px) scale(1.05521);">
-    <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px;"></canvas>
-    <canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
-    <canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none;"></canvas>
+  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 28px) scale(1.13906);">
+    <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; opacity: 0;"></canvas>
+    
+    <canvas width="3360" height="1610" style="position: absolute; top: 0px; left: 0px; width: 1920px; height: 920px; pointer-events: none; cursor: inherit;"></canvas><canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas><canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas>
     <button id="fsBtn" title="Fullscreen" style="display: block;">⛶</button>
-    <div id="ui">Swipe the Earth to spin it &nbsp;·&nbsp; Swipe the air to move the wind &nbsp;·&nbsp; Squish or double-click clouds to rain</div>
-    <div id="controls">
+    <div id="ui" style="">Swipe the Earth to spin it &nbsp;·&nbsp; Swipe the air to move the wind &nbsp;·&nbsp; Squish or double-click clouds to rain</div>
+    <div id="controls" style="">
+      <button id="btnPlay" onclick="togglePlayMode()">▶ Play</button>
       <button onclick="floodTile(0)">Seed</button>
       <button onclick="fullGrassTile()">Grass</button>
       <button id="btnGrow" onclick="boostGrass()" class="">Grow ×10</button>
@@ -91,7 +92,7 @@
       <button onclick="saveDefaults()">Save</button>
       <button onclick="toggleUI()" title="Hide UI">✕</button>
     </div>
-    <button id="btnReveal" onclick="toggleUI()" title="Show UI">☰</button>
+    <button id="btnReveal" onclick="toggleUI()" title="Show UI" style="display: none;">☰</button>
     <div id="left-col" style="display: none;">
     <div id="halo-sliders">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -202,7 +203,7 @@
       <div class="row"><label>Lean Smooth</label> <input type="range" id="sGWLeanSmooth" min="1" max="40" step="1" value="13">  <span id="vGWLeanSmooth">1.3</span></div>
       <div class="row"><label>Wind Sens</label>   <input type="range" id="sGWWindSens" min="100" max="2000" step="50" value="700"><span id="vGWWindSens">700</span></div>
       <div class="row"><label>Swipe Str</label>   <input type="range" id="sWindSwipeStr" min="1" max="50" step="1" value="14"> <span id="vWindSwipeStr">0.014</span></div>
-      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">·0 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Neutral</span></div>
+      <div class="row"><label>Level</label><span id="vWindInd" style="font-size:11px;color:rgba(255,240,100,0.9);margin-right:5px">·1 </span><span id="vGWLevel" style="font-size:11px;color:#aef">Neutral</span></div>
       <div class="row"><label>N Amp</label>       <input type="range" id="sSwayAmp0" min="0" max="30" step="1" value="8">  <span id="vSwayAmp0">0.08</span></div>
       <div class="row"><label>S Amp</label>       <input type="range" id="sSwayAmp1" min="0" max="30" step="1" value="13">  <span id="vSwayAmp1">0.13</span></div>
       <div class="row"><label>M Amp</label>       <input type="range" id="sSwayAmp2" min="0" max="30" step="1" value="19"> <span id="vSwayAmp2">0.19</span></div>
@@ -280,7 +281,8 @@
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Strata</div>
         <div class="tab-row">
           <button class="tab" onclick="showTab('strata','s1',this)">1</button>
-          <button class="tab active" onclick="showTab('strata','s2',this)">2</button>
+          <button class="tab" onclick="showTab('strata','s2',this)">2</button>
+          <button class="tab active" onclick="showTab('strata','s3',this)">3</button>
         </div>
       </div>
       <div id="strata-s1" data-group="strata" style="display: none;">
@@ -309,7 +311,7 @@
           <div class="row"><label>Extra freq</label> <input type="range" id="sDHCEFq" min="0" max="60" step="1" value="15"><span id="vDHCEFq">15</span></div>
         </div>
       </div>
-      <div id="strata-s2" data-group="strata">
+      <div id="strata-s2" data-group="strata" style="display: none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
           <div class="tab-row">
             <button class="tab" onclick="showTab('s2','outer',this)">Outer</button>
@@ -334,6 +336,17 @@
           <div class="row"><label>Detail freq</label><input type="range" id="sDH2CDFr" min="1" max="80" step="1" value="68"><span id="vDH2CDFr">68</span></div>
           <div class="row"><label>Extra freq</label> <input type="range" id="sDH2CEFq" min="0" max="60" step="1" value="12"><span id="vDH2CEFq">12</span></div>
         </div>
+      </div>
+      <div id="strata-s3" data-group="strata" style="">
+        <div class="row"><label>Scale</label>      <input type="range" id="sDH3Scale" min="50" max="115" step="0.5" value="86.5"><span id="vDH3Scale">86.5%</span></div>
+        <div class="row"><label>Thickness</label>  <input type="range" id="sDH3Thick" min="2" max="80" step="1" value="80"><span id="vDH3Thick">80px</span></div>
+        <div class="row"><label>Alpha</label>      <input type="range" id="sDH3Alpha" min="0" max="100" step="1" value="100"><span id="vDH3Alpha">100%</span></div>
+        <div class="row"><label>Glow</label>       <input type="range" id="sDH3Glow" min="0" max="80" step="1" value="29"><span id="vDH3Glow">29</span></div>
+        <div class="row"><label>Amplitude</label>  <input type="range" id="sDH3Amp" min="1" max="60" step="1" value="1"><span id="vDH3Amp">1</span></div>
+        <div class="row"><label>Frequency</label>  <input type="range" id="sDH3Freq" min="1" max="40" step="1" value="18"><span id="vDH3Freq">18</span></div>
+        <div class="row"><label>Detail amp</label> <input type="range" id="sDH3Det" min="0" max="20" step="0.5" value="9.5"><span id="vDH3Det">9.5</span></div>
+        <div class="row"><label>Detail freq</label><input type="range" id="sDH3DFr" min="1" max="80" step="1" value="36"><span id="vDH3DFr">36</span></div>
+        <div class="row"><label>Extra freq</label> <input type="range" id="sDH3EFq" min="0" max="60" step="1" value="0"><span id="vDH3EFq">0</span></div>
       </div>
     </div>
     </div>
@@ -570,6 +583,7 @@ const _wH2    = new Float32Array(WAVE_SEGS), _wH2C    = new Float32Array(WAVE_SE
 const _wH3    = new Float32Array(WAVE_SEGS), _wH3C    = new Float32Array(WAVE_SEGS);
 const _wDH    = new Float32Array(WAVE_SEGS), _wDHC    = new Float32Array(WAVE_SEGS);
 const _wDH2   = new Float32Array(WAVE_SEGS), _wDH2C   = new Float32Array(WAVE_SEGS);
+const _wDH3   = new Float32Array(WAVE_SEGS);
 // Preallocated scratch buffers for wave paths — reused every frame, no allocation churn
 const _grXs = new Float32Array(WAVE_SEGS), _grYs = new Float32Array(WAVE_SEGS);
 const _grHXs = new Float32Array(WAVE_SEGS), _grHYs = new Float32Array(WAVE_SEGS);
@@ -594,7 +608,7 @@ let HALO2_SCALE = 1.16;
 let HALO2_ALPHA = 0.14;
 let HALO2_CUT_SCALE = 1.12;
 let HALO2_OFFSET = -24;
-let h2WaveAmp = 23.590271270554165, h2WaveFreq = 28, h2DetAmp = 0, h2DetFreq = 1, h2ExtraFreq = 30;
+let h2WaveAmp = 19.16188476826922, h2WaveFreq = 28, h2DetAmp = 0, h2DetFreq = 1, h2ExtraFreq = 30;
 const h2Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2ExtraPhase = Math.random()*Math.PI*2;
 function halo2WaveAt(a) {
@@ -604,7 +618,7 @@ function halo2WaveAt(a) {
        + Math.sin(a*Math.round(h2DetFreq*1.7)+h2Phase[3])*(h2DetAmp*0.5)
        + Math.sin(a*h2ExtraFreq+h2ExtraPhase)*h2WaveAmp*0.5;
 }
-let h2cWaveAmp = 0.5680815650216737, h2cWaveFreq = 28, h2cDetAmp = 0, h2cDetFreq = 1, h2cExtraFreq = 30;
+let h2cWaveAmp = 0.34736520483332756, h2cWaveFreq = 28, h2cDetAmp = 0, h2cDetFreq = 1, h2cExtraFreq = 30;
 const h2cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2cExtraPhase = Math.random()*Math.PI*2;
 function halo2CutWaveAt(a) {
@@ -621,7 +635,7 @@ let HALO3_SCALE = 1.125;
 let HALO3_ALPHA = 0.08;
 let HALO3_CUT_SCALE = 1.115;
 let HALO3_OFFSET = 60;
-let h3WaveAmp = 24.55902452965238, h3WaveFreq = 19, h3DetAmp = 7, h3DetFreq = 15, h3ExtraFreq = 14;
+let h3WaveAmp = 27.820468503208136, h3WaveFreq = 19, h3DetAmp = 7, h3DetFreq = 15, h3ExtraFreq = 14;
 const h3Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3ExtraPhase = Math.random()*Math.PI*2;
 function halo3WaveAt(a) {
@@ -631,7 +645,7 @@ function halo3WaveAt(a) {
        + Math.sin(a*Math.round(h3DetFreq*1.7)+h3Phase[3])*(h3DetAmp*0.5)
        + Math.sin(a*h3ExtraFreq+h3ExtraPhase)*h3WaveAmp*0.5;
 }
-let h3cWaveAmp = 27.08985324601436, h3cWaveFreq = 7, h3cDetAmp = 8, h3cDetFreq = 26, h3cExtraFreq = 14;
+let h3cWaveAmp = 25.10701033312867, h3cWaveFreq = 7, h3cDetAmp = 8, h3cDetFreq = 26, h3cExtraFreq = 14;
 const h3cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3cExtraPhase = Math.random()*Math.PI*2;
 function halo3CutWaveAt(a) {
@@ -742,10 +756,10 @@ document.getElementById('sCloudSpread').addEventListener('input', e => {
   CLOUD_SPREAD = +e.target.value; document.getElementById('vCloudSpread').textContent = CLOUD_SPREAD;
 });
 document.getElementById('sCldShdScale').addEventListener('input', e => {
-  CLOUD_SHD_SCALE = +e.target.value / 100; document.getElementById('vCldShdScale').textContent = e.target.value + '%';
+  CLOUD_SHD_SCALE = +e.target.value / 100; document.getElementById('vCldShdScale').textContent = e.target.value + '%'; _invalidatePuffTexture();
 });
 document.getElementById('sCldShdOff').addEventListener('input', e => {
-  CLOUD_SHD_OFFSET = +e.target.value / 100; document.getElementById('vCldShdOff').textContent = e.target.value + '%';
+  CLOUD_SHD_OFFSET = +e.target.value / 100; document.getElementById('vCldShdOff').textContent = e.target.value + '%'; _invalidatePuffTexture();
 });
 document.getElementById('sCldShdSun').addEventListener('input', e => {
   CLOUD_SHD_SUN = +e.target.value / 100; document.getElementById('vCldShdSun').textContent = e.target.value + '%';
@@ -1461,10 +1475,10 @@ const WATER_FLOW_RATE = 10;
 // Sun zones: center 5 tiles charge at full rate (0→100 in 5s), next 5 each side at half, rest drain
 const SUN_ZONE1_RATE = 14;  // units/sec in center ±2 tiles
 const SUN_ZONE2_RATE = 7;   // units/sec in ±3-7 tiles
-const SUN_DRAIN_RATE = 2;   // units/sec lost outside sun zones
+const SUN_DRAIN_RATE = 0.4; // units/sec lost outside sun zones
 // Health & grass spread
 const HEALTH_RISE_RATE  = 9;    // units/sec at full G (photosynthesis rate at peak grass)
-const HEALTH_DRAIN_RATE = 3;    // units/sec when W or S is insufficient
+const HEALTH_DRAIN_RATE = 0.5;  // units/sec when W or S is insufficient
 const GRASS_SPREAD_RATE = 0.4;
 const W_CONSUME_RATE    = 3;    // water units/sec consumed at full G
 const S_CONSUME_RATE    = 2;    // sun units/sec consumed at full G
@@ -1696,6 +1710,54 @@ const butterflies   = [];
 let btfSpawnTimer   = 800;
 const tileParticles = [];
 
+// ── BUTTERFLY TEXTURE BAKING ─────────────────────────────────────────────────
+// Pre-renders one butterfly frame (BTF_UP or BTF_DN) into a small OffscreenCanvas
+// for a given color scheme. The PixiJS sprite sets its pivot to the body point so
+// that position/rotation in world space work identically to the old Canvas2D code.
+function _bakeButterflyFrame(frame, svgW, svgH, colorScheme) {
+  const PAD = 3; // padding in SVG units so antialiasing isn't clipped
+  const oc  = new OffscreenCanvas(
+    Math.ceil((svgW + PAD * 2) * BTF_SCALE) + 2,
+    Math.ceil((svgH + PAD * 2) * BTF_SCALE) + 2
+  );
+  const c = oc.getContext('2d');
+  c.scale(BTF_SCALE, BTF_SCALE);
+  c.translate(PAD, PAD); // shift paths so padding is visible
+  const ol = colorScheme.outline;
+  if (ol) { c.strokeStyle = ol.color; c.lineWidth = ol.width / BTF_SCALE; c.lineJoin = 'round'; }
+  c.fillStyle = colorScheme.back;  c.fill(frame.lWingO); if (ol) c.stroke(frame.lWingO);
+  c.fillStyle = colorScheme.back;  c.fill(frame.lWingI); if (ol) c.stroke(frame.lWingI);
+  c.fillStyle = '#0a151b';         c.fill(frame.body);
+  c.fillStyle = colorScheme.front; c.fill(frame.rWingO); if (ol) c.stroke(frame.rWingO);
+  c.fillStyle = colorScheme.front; c.fill(frame.rWingI); if (ol) c.stroke(frame.rWingI);
+  c.strokeStyle = '#0d161c';
+  c.lineWidth   = 1.8 / BTF_SCALE;
+  c.lineCap     = 'round';
+  c.stroke(frame.ant1);
+  c.stroke(frame.ant2);
+  return {
+    tex:    PIXI.Texture.from(oc),
+    pivotX: (frame.px + PAD) * BTF_SCALE, // body pivot in texture-pixel space
+    pivotY: (frame.py + PAD) * BTF_SCALE,
+  };
+}
+
+function _bakeButterflyTextures(colorScheme) {
+  return {
+    up: _bakeButterflyFrame(BTF_UP, 100.73,  107.791, colorScheme),
+    dn: _bakeButterflyFrame(BTF_DN, 111.236,  79.85,  colorScheme),
+  };
+}
+
+// Attaches a PixiJS sprite to a butterfly object once the container is ready.
+function _addButterflySprite(b) {
+  if (b.pixi || !window.pixiButterflies) return;
+  const baked  = _bakeButterflyTextures(b.colorScheme);
+  const sprite = new PIXI.Sprite();
+  window.pixiButterflies.addChild(sprite);
+  b.pixi = { sprite, up: baked.up, dn: baked.dn };
+}
+
 function spawnButterfly(anyAngle = false) {
   const goRight    = Math.random() < 0.5;
   const baseRadius = R + SURF_R + 80 + Math.random() * 100;
@@ -1823,58 +1885,94 @@ function updateButterflies(dt) {
   }
 }
 
+function _butterflyScreenPos(b) {
+  let sx = CX + Math.sin(b.angle) * b.radius;
+  let sy = CY - Math.cos(b.angle) * b.radius;
+  if (b.landState === 'landed') {
+    const displayH = 126;
+    const displayW = CREATURE_SVG_W * (displayH / CREATURE_SVG_H);
+    const pivotX   = creatureFlip ? -displayW / 2 : displayW / 2;
+    const w        = creatureMoving ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
+    const crTile   = (creaturePos / TILE_COUNT) * Math.PI * 2;
+    const sa       = crTile + rotation;
+    const crSurfR  = R + SURF_R + CAP_H + 5 + waveAt(crTile);
+    const crBaseX  = CX + Math.sin(sa) * crSurfR;
+    const crBaseY  = CY - Math.cos(sa) * crSurfR;
+    const lx_eff   = creatureFlip ? -b.landLX : b.landLX;
+    const relX = lx_eff - pivotX, relY = b.landLY;
+    const lx   = relX * Math.cos(w) - relY * Math.sin(w) + pivotX;
+    const ly   = relX * Math.sin(w) + relY * Math.cos(w);
+    sx = crBaseX + lx * Math.cos(sa) - ly * Math.sin(sa);
+    sy = crBaseY + lx * Math.sin(sa) + ly * Math.cos(sa);
+  }
+  return { sx, sy };
+}
+
 function drawButterflies() {
-  bctx.clearRect(0, 0, W, H);
-  for (const b of butterflies) {
-    let sx  = CX + Math.sin(b.angle) * b.radius;
-    let sy  = CY - Math.cos(b.angle) * b.radius;
-    const landed   = b.landState === 'landed';
-    if (landed) {
-      // Recompute position to follow the creature's rocking wiggle.
-      const displayH = 126;
-      const displayW = CREATURE_SVG_W * (displayH / CREATURE_SVG_H);
-      const pivotX   = creatureFlip ? -displayW / 2 : displayW / 2;
-      const w        = creatureMoving ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
-      const crTile   = (creaturePos / TILE_COUNT) * Math.PI * 2;
-      const sa       = crTile + rotation;
-      const crSurfR  = R + SURF_R + CAP_H + 5 + waveAt(crTile);
-      const crBaseX  = CX + Math.sin(sa) * crSurfR;
-      const crBaseY  = CY - Math.cos(sa) * crSurfR;
-      // lx_eff: creature-local x after applying the image flip
-      const lx_eff   = creatureFlip ? -b.landLX : b.landLX;
-      // Rotate (lx_eff, landLY) around wiggle pivot (pivotX, 0) by w
-      const relX = lx_eff - pivotX, relY = b.landLY;
-      const lx   = relX * Math.cos(w) - relY * Math.sin(w) + pivotX;
-      const ly   = relX * Math.sin(w) + relY * Math.cos(w);
-      sx = crBaseX + lx * Math.cos(sa) - ly * Math.sin(sa);
-      sy = crBaseY + lx * Math.sin(sa) + ly * Math.cos(sa);
+  if (!window.pixiButterflies) {
+    // PixiJS not ready yet — draw the old Canvas2D way as a fallback
+    bctx.clearRect(0, 0, W, H);
+    for (const b of butterflies) {
+      const { sx, sy } = _butterflyScreenPos(b);
+      const landed   = b.landState === 'landed';
+      const f        = landed ? BTF_UP : (Math.sin(b.flapPhase) <= 0 ? BTF_DN : BTF_UP);
+      const lx_eff_draw = landed ? (creatureFlip ? -b.landLX : b.landLX) : 0;
+      const goRight  = landed ? (lx_eff_draw < 0) : b.vAngle >= 0;
+      const dir      = goRight ? b.angle : b.angle + Math.PI;
+      const natAngle = goRight ? BTF_NAT_ANGLE_R : BTF_NAT_ANGLE;
+      const landWiggle = (landed && creatureMoving) ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
+      const rot      = dir - natAngle + landWiggle;
+      bctx.save();
+      bctx.translate(sx, sy);
+      bctx.rotate(rot);
+      if (goRight) bctx.scale(-1, 1);
+      bctx.scale(BTF_SCALE, BTF_SCALE);
+      bctx.translate(-f.px, -f.py);
+      const ol = b.colorScheme.outline;
+      if (ol) { bctx.strokeStyle = ol.color; bctx.lineWidth = ol.width / BTF_SCALE; bctx.lineJoin = 'round'; }
+      bctx.fillStyle = b.colorScheme.back;  bctx.fill(f.lWingO); if (ol) bctx.stroke(f.lWingO);
+      bctx.fillStyle = b.colorScheme.back;  bctx.fill(f.lWingI); if (ol) bctx.stroke(f.lWingI);
+      bctx.fillStyle = '#0a151b';           bctx.fill(f.body);
+      bctx.fillStyle = b.colorScheme.front; bctx.fill(f.rWingO); if (ol) bctx.stroke(f.rWingO);
+      bctx.fillStyle = b.colorScheme.front; bctx.fill(f.rWingI); if (ol) bctx.stroke(f.rWingI);
+      bctx.strokeStyle = '#0d161c';
+      bctx.lineWidth   = 1.8 / BTF_SCALE;
+      bctx.lineCap     = 'round';
+      bctx.stroke(f.ant1);
+      bctx.stroke(f.ant2);
+      bctx.restore();
     }
-    const f        = landed ? BTF_UP : (Math.sin(b.flapPhase) <= 0 ? BTF_DN : BTF_UP);
+    return;
+  }
+
+  // ── PixiJS path — bake sprites on demand, update transforms each frame ──────
+  // Hide the old btf canvas now that PixiJS handles all butterfly rendering.
+  if (document.getElementById('btf').style.display !== 'none') {
+    document.getElementById('btf').style.display = 'none';
+  }
+
+  for (const b of butterflies) {
+    _addButterflySprite(b); // no-op if sprite already exists
+    if (!b.pixi) continue;  // PixiJS not fully ready for this butterfly yet
+
+    const { sx, sy } = _butterflyScreenPos(b);
+    const landed      = b.landState === 'landed';
+    const useUp       = landed || Math.sin(b.flapPhase) > 0;
+    const frame       = useUp ? b.pixi.up : b.pixi.dn;
     const lx_eff_draw = landed ? (creatureFlip ? -b.landLX : b.landLX) : 0;
-    const goRight  = landed ? (lx_eff_draw < 0) : b.vAngle >= 0;
-    const dir      = goRight ? b.angle : b.angle + Math.PI;
-    const natAngle = goRight ? BTF_NAT_ANGLE_R : BTF_NAT_ANGLE;
-    const landWiggle = (landed && creatureMoving) ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
-    const rot      = dir - natAngle + landWiggle;
-    bctx.save();
-    bctx.translate(sx, sy);
-    bctx.rotate(rot);
-    if (goRight) bctx.scale(-1, 1);
-    bctx.scale(BTF_SCALE, BTF_SCALE);
-    bctx.translate(-f.px, -f.py);
-    const ol = b.colorScheme.outline;
-    if (ol) { bctx.strokeStyle = ol.color; bctx.lineWidth = ol.width / BTF_SCALE; bctx.lineJoin = 'round'; }
-    bctx.fillStyle = b.colorScheme.back;  bctx.fill(f.lWingO); if (ol) bctx.stroke(f.lWingO);
-    bctx.fillStyle = b.colorScheme.back;  bctx.fill(f.lWingI); if (ol) bctx.stroke(f.lWingI);
-    bctx.fillStyle = '#0a151b';           bctx.fill(f.body);
-    bctx.fillStyle = b.colorScheme.front; bctx.fill(f.rWingO); if (ol) bctx.stroke(f.rWingO);
-    bctx.fillStyle = b.colorScheme.front; bctx.fill(f.rWingI); if (ol) bctx.stroke(f.rWingI);
-    bctx.strokeStyle = '#0d161c';
-    bctx.lineWidth   = 1.8 / BTF_SCALE;
-    bctx.lineCap     = 'round';
-    bctx.stroke(f.ant1);
-    bctx.stroke(f.ant2);
-    bctx.restore();
+    const goRight     = landed ? (lx_eff_draw < 0) : b.vAngle >= 0;
+    const dir         = goRight ? b.angle : b.angle + Math.PI;
+    const natAngle    = goRight ? BTF_NAT_ANGLE_R : BTF_NAT_ANGLE;
+    const landWiggle  = (landed && creatureMoving) ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
+    const rot         = dir - natAngle + landWiggle;
+
+    const s = b.pixi.sprite;
+    s.texture = frame.tex;
+    s.pivot.set(frame.pivotX, frame.pivotY);
+    s.position.set(sx, sy);
+    s.rotation   = rot;
+    s.scale.set(goRight ? -1 : 1, 1); // -1 flips around pivot = mirrors the butterfly
+    s.visible    = true;
   }
 }
 
@@ -1966,12 +2064,25 @@ function updateClouds(dt) {
     }
     // Track how long the cloud has been at full water
     if (c.water >= 100) { c.fullTimer += dtSec; } else { c.fullTimer = 0; }
-    // Auto-rain after 10 s at full: only if on screen and no other cloud is already auto-raining
-    if (c.fullTimer >= 10 && c.autoRainTimer === 0) {
+    // Auto-rain: threshold scales with clumping on-screen; off-screen clouds rain much sooner
+    if (c.fullTimer > 0 && c.autoRainTimer === 0) {
       const csx = CX + Math.sin(c.angle) * c.radius;
-      const onScreen      = csx > -50 && csx < W + 50;
-      const anotherRaing  = clouds.some(o => o !== c && (o.autoRainTimer > 0 || (heldCloud === o && heldCloudTime > 0.35)));
-      if (onScreen && !anotherRaing) { c.autoRainTimer = 18; c.fullTimer = 0; }
+      const csy = CY - Math.cos(c.angle) * c.radius;
+      const onScreen = csx > -50 && csx < W + 50;
+      let threshold;
+      if (onScreen) {
+        let clumpCount = 0;
+        for (const o of clouds) {
+          if (o === c) continue;
+          const ox = CX + Math.sin(o.angle) * o.radius;
+          const oy = CY - Math.cos(o.angle) * o.radius;
+          if (Math.hypot(ox - csx, oy - csy) < 400 && o.water > 60) clumpCount++;
+        }
+        threshold = clumpCount >= 2 ? 5 : clumpCount === 1 ? 10 : 20;
+      } else {
+        threshold = 4; // off-screen clouds rain quickly
+      }
+      if (c.fullTimer >= threshold) { c.autoRainTimer = 18; c.fullTimer = 0; }
     }
     const isRaining = (heldCloud === c && heldCloudTime > 0.35) || c.autoRainTimer > 0;
     for (let pi = 0; pi < c.puffs.length; pi++) {
@@ -2000,7 +2111,7 @@ function updateClouds(dt) {
   for (let i = clouds.length - 1; i >= 0; i--) {
     const c = clouds[i];
     if (!c.everVisible && c.puffs.some(p => p.r >= 1)) c.everVisible = true;
-    if (c.everVisible && c.water <= 0 && c.puffs.every(p => p.r < 1)) clouds.splice(i, 1);
+    if (c.everVisible && c.water <= 0 && c.puffs.every(p => p.r < 1)) { _destroyCloudPixi(c); clouds.splice(i, 1); }
   }
 }
 const RAIN_DRAIN_RATE = 5; // water units/sec drained from cloud while raining
@@ -2110,7 +2221,7 @@ function updateRain(dt) {
     for (let d = -2; d <= 2; d++) {
       const idx = ((ci + d) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
       if (tiles[idx].type === 2 && tiles[idx].sun > 10) {
-        const absorbRate = 14 * Math.max(0.15, 1 - (c.water / 100) * 0.85);
+        const absorbRate = 24 * Math.max(0.15, 1 - (c.water / 100) * 0.85);
         c.water = Math.min(100, c.water + absorbRate * dtSec);
         break;
       }
@@ -2211,7 +2322,7 @@ function drawEvaporation() {
   ctx.lineJoin = 'round';
 
   const NUM_LINES = 3;
-  const segments  = 16;
+  const segments  = 8;
   const waveAmp   = 20;
 
   for (let di = -18; di <= 18; di++) {
@@ -2259,8 +2370,8 @@ function drawEvaporation() {
       grad.addColorStop(1,    `rgba(185,225,250,0)`);
 
       const thickFrac  = 0.75 + 0.25 * (0.5 + 0.5 * Math.sin(i * 1.3 + ln * 2.7));
-      const lineWaveAmp = waveAmp * (1 - (thickFrac - 0.75) * 1.2);
       ctx.lineWidth = 70 * thickFrac;
+      const lineWaveAmp = Math.min(waveAmp * (1 - (thickFrac - 0.75) * 1.2), ctx.lineWidth * 0.30);
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       for (let s = 0; s < segments; s++) {
@@ -2299,6 +2410,7 @@ function spawnEvaporationCloud(tileIdx) {
       if (!onScreen && (victim === null || c.water < victim.water)) victim = c;
     }
     if (!victim || lastTime - lastCloudRemoveTime < 5000) return;
+    _destroyCloudPixi(victim);
     clouds.splice(clouds.indexOf(victim), 1);
     lastCloudRemoveTime = lastTime;
   }
@@ -2307,7 +2419,7 @@ function spawnEvaporationCloud(tileIdx) {
   const puffs   = buildCloudPuffs(centerR);
   clouds.push({
     angle,
-    radius:        (R + SURF_R) * HALO_SCALE + CLOUD_LIFT - 60 + Math.random() * 20,
+    radius:        (R + SURF_R) * HALO_SCALE + CLOUD_LIFT + (Math.random() < 0.3 ? -65 - Math.random() * CLOUD_SPREAD * 2 : -60 + Math.random() * CLOUD_SPREAD),
     phase:         Math.random() * Math.PI * 2,
     centerR, vel:  0,
     parallax:      0.25 + Math.random() * 0.3,
@@ -2316,82 +2428,129 @@ function spawnEvaporationCloud(tileIdx) {
     fullTimer: 0,
   });
   lastCloudSpawnTime = lastTime;
-  cloudSpawnDelay    = 5000 + Math.random() * 5000;
+  cloudSpawnDelay    = 1000 + Math.random() * 1000;
 }
 
-let _cloudOC = null, _cloudOCCtx = null, _cloudTex = null, _cloudSprite = null;
+// ── CLOUD PIXI MIGRATION ──────────────────────────────────────────────────────
+// One shared "unit puff" texture (PUFF_UNIT-px radius) baked once with a gradient
+// shadow. Per-puff, only transforms update each frame — no Canvas2D, no GPU upload.
+// Shadow: white top (away from planet) → blue-grey bottom (toward planet).
+// After outer.rotation=puffAngle the dark end always faces the planet. ✓
+let _puffTex = null;
+const PUFF_UNIT = 100;                                    // 1 world-px = PUFF_UNIT in texture
+const _PUFF_W   = PUFF_UNIT * 2 + 50;                    // 250 px wide
+const _PUFF_H   = Math.round(PUFF_UNIT * 1.55) + 50;     // 205 px tall
+const _PUFF_CX  = _PUFF_W / 2;                           // 125 — pivot x
+const _PUFF_CY  = PUFF_UNIT + 25;                        // 125 — pivot y (semicircle centre)
+
+function _bakePuffTexture() {
+  if (_puffTex) return;
+  const oc = new OffscreenCanvas(_PUFF_W, _PUFF_H);
+  const c  = oc.getContext('2d');
+  // White puff shape only — shadow is rendered separately as a live PIXI.Graphics
+  // so it can shift based on the cloud's position relative to the sun each frame
+  c.fillStyle = '#ffffff';
+  c.beginPath();
+  c.arc(_PUFF_CX, _PUFF_CY, PUFF_UNIT, Math.PI, 2 * Math.PI, false);
+  c.ellipse(_PUFF_CX, _PUFF_CY, PUFF_UNIT, PUFF_UNIT * 0.55, 0, 0, Math.PI, false);
+  c.closePath();
+  c.fill();
+  _puffTex = PIXI.Texture.from(oc);
+}
+
+function _invalidatePuffTexture() {
+  if (_puffTex) { _puffTex.destroy(true); _puffTex = null; }
+  _bakePuffTexture();
+  // Destroy all cloud pixi objects — they'll be lazily recreated next frame via _addCloudPixi.
+  // Required because shadow Graphics size (CLOUD_SHD_SCALE) is baked at creation time.
+  for (const cl of clouds) _destroyCloudPixi(cl);
+}
+
+function _addCloudPixi(cloud) {
+  if (cloud.pixi || !window.pixiClouds) return;
+  _bakePuffTexture();
+  const container = new PIXI.Container();
+  window.pixiClouds.addChild(container);
+  const puffItems = cloud.puffs.map(() => {
+    const outer  = new PIXI.Container(); // world position + puffAngle rotation
+    const inner  = new PIXI.Container(); // dr scale + squish (in outer's rotated space)
+
+    // White puff base
+    const sprite = new PIXI.Sprite(_puffTex);
+    sprite.pivot.set(_PUFF_CX, _PUFF_CY); // pivot at puff centre → origin of inner
+
+    // Shadow circle — dark disc rendered on top of puff, clipped to puff shape.
+    // Position is updated every frame in drawClouds() with sun-based horizontal shift.
+    const shadowGfx = new PIXI.Graphics();
+    shadowGfx.circle(0, 0, PUFF_UNIT * CLOUD_SHD_SCALE).fill({ color: 0x000000, alpha: 0.25 });
+
+    // Mask sprite clips shadow to puff outline. renderable=false hides it from the normal
+    // scene pass but PixiJS still renders it when processing the alpha mask effect.
+    const maskSprite = new PIXI.Sprite(_puffTex);
+    maskSprite.pivot.set(_PUFF_CX, _PUFF_CY);
+    maskSprite.renderable = false;
+    shadowGfx.mask = maskSprite;
+
+    inner.addChild(sprite);
+    inner.addChild(shadowGfx);
+    inner.addChild(maskSprite);
+    outer.addChild(inner);
+    container.addChild(outer);
+    return { outer, inner, shadowGfx };
+  });
+  const waterLabel = new PIXI.Text({ text: '', style: { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold', fill: 0x50B4FF } });
+  waterLabel.anchor.set(0.5, 0.5);
+  container.addChild(waterLabel);
+  cloud.pixi = { container, puffItems, waterLabel };
+}
+
+function _destroyCloudPixi(cloud) {
+  if (!cloud.pixi) return;
+  cloud.pixi.container.destroy({ children: true });
+  cloud.pixi = null;
+}
+
 function drawClouds() {
   if (!window.pixiClouds) return;
-  // Lazy-init or reinit on resize
-  if (!_cloudOC || _cloudOC.width !== W || _cloudOC.height !== H) {
-    if (_cloudSprite) { _cloudSprite.destroy(); _cloudTex.destroy(true); }
-    _cloudOC    = new OffscreenCanvas(W, H);
-    _cloudOCCtx = _cloudOC.getContext('2d');
-    _cloudTex   = PIXI.Texture.from(_cloudOC);
-    _cloudSprite = new PIXI.Sprite(_cloudTex);
-    window.pixiClouds.addChild(_cloudSprite);
-  }
-  const oc = _cloudOCCtx;
-  oc.clearRect(0, 0, W, H);
+  for (const c of clouds) _addCloudPixi(c); // lazy-init startup clouds once PixiJS is ready
   const t = lastTime * 0.00035;
   for (const c of clouds) {
+    if (!c.pixi) continue;
     const sx  = CX + Math.sin(c.angle) * c.radius;
     const sy  = CY - Math.cos(c.angle) * c.radius;
     const bob = Math.sin(t + c.phase) * 9;
+    c.pixi.waterLabel.text    = 'W' + Math.round(c.water);
+    c.pixi.waterLabel.position.set(sx, sy + c.centerR + 20);
+    c.pixi.waterLabel.visible = showNumbers;
     const tx  = Math.cos(c.angle);
     const ty  = Math.sin(c.angle);
     const nx  =  Math.sin(c.angle);
     const ny  = -Math.cos(c.angle);
-    const shadowAlpha = 0.25 + (c.water > 80 ? Math.min(0.1, (c.water - 80) / 20 * 0.1) : 0);
-    const shadowFill  = `rgba(0,0,0,${(shadowAlpha * 100 | 0) / 100})`;
-    for (const p of c.puffs) {
-      if (p.r < 1) continue;
+    for (let pi = 0; pi < c.puffs.length; pi++) {
+      const p    = c.puffs[pi];
+      const item = c.pixi.puffItems[pi];
+      if (p.r < 1) { item.outer.visible = false; continue; }
+      item.outer.visible = true;
       const px        = sx + p.dx * tx + p.dy * nx;
       const py        = sy + p.dx * ty + p.dy * ny + bob;
       const wobble    = 1 + Math.sin(t * 0.2 + p.wp) * p.wa;
-      const dr        = p.r * wobble;
-      const ry        = dr * 0.55;
+      const dr        = (p.r * wobble) / PUFF_UNIT; // world px → texture-unit scale
       const puffAngle = Math.atan2(px - CX, CY - py);
       const sq        = p.squish || 0;
-      oc.save();
-      oc.translate(px, py);
-      oc.rotate(puffAngle);
-      oc.scale(1 + sq * 0.75, 1 - sq * 0.50);
-      oc.fillStyle = '#fff';
-      oc.beginPath();
-      oc.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
-      oc.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
-      oc.closePath();
-      oc.fill();
-      oc.save();
-      oc.beginPath();
-      oc.arc(0, 0, dr, Math.PI, 2 * Math.PI, false);
-      oc.ellipse(0, 0, dr, ry, 0, 0, Math.PI, false);
-      oc.closePath();
-      oc.clip();
-      const sunShiftScreen = (px - CX) / CX * dr * CLOUD_SHD_SUN;
-      const puffSunX =  sunShiftScreen * Math.cos(puffAngle);
-      const puffSunY = -sunShiftScreen * Math.sin(puffAngle);
-      oc.fillStyle = shadowFill;
-      oc.beginPath();
-      oc.arc(puffSunX, dr * CLOUD_SHD_OFFSET + puffSunY, dr * CLOUD_SHD_SCALE, 0, Math.PI * 3);
-      oc.fill();
-      oc.restore();
-      oc.restore();
-    }
-    if (showNumbers && c.water > 0) {
-      oc.save();
-      oc.font = 'bold 12px monospace';
-      oc.textAlign = 'center';
-      oc.textBaseline = 'top';
-      oc.fillStyle = 'rgba(255,255,255,0.85)';
-      const textX = sx + (-nx) * c.centerR * 1.4;
-      const textY = sy + bob + (-ny) * c.centerR * 1.4;
-      oc.fillText(Math.ceil(c.water), textX, textY);
-      oc.restore();
+      item.outer.position.set(px, py);
+      item.outer.rotation = puffAngle;
+      // Squish is applied in outer's rotated space (tangential × radial axes) — matches Canvas2D
+      item.inner.scale.set(dr * (1 + sq * 0.75), dr * (1 - sq * 0.50));
+
+      // Sun-based shadow shift: shadow moves away from sun as cloud crosses the sky.
+      // sunShift is in inner-local units (PUFF_UNIT = 1 puff radius), then projected
+      // into outer's rotated coordinate frame so "horizontal in world" maps correctly.
+      const sunShift = (px - CX) / CX * PUFF_UNIT * CLOUD_SHD_SUN;
+      const shdX = sunShift * Math.cos(puffAngle);
+      const shdY = -sunShift * Math.sin(puffAngle) + PUFF_UNIT * CLOUD_SHD_OFFSET;
+      item.shadowGfx.position.set(shdX, shdY);
     }
   }
-  _cloudTex.source.update();
 }
 
 
@@ -2519,13 +2678,13 @@ document.getElementById('sIWidth').addEventListener('input', e => {
   INSET_WIDTH = +e.target.value; document.getElementById('vIWidth').textContent = INSET_WIDTH;
 });
 document.getElementById('sSideAlpha').addEventListener('input', e => {
-  SIDE_ALPHA = +e.target.value / 100; document.getElementById('vSideAlpha').textContent = e.target.value + '%';
+  SIDE_ALPHA = +e.target.value / 100; document.getElementById('vSideAlpha').textContent = e.target.value + '%'; _shadowDirty = true;
 });
 document.getElementById('sSideShift').addEventListener('input', e => {
-  SIDE_SHIFT = +e.target.value; document.getElementById('vSideShift').textContent = SIDE_SHIFT;
+  SIDE_SHIFT = +e.target.value; document.getElementById('vSideShift').textContent = SIDE_SHIFT; _shadowDirty = true;
 });
 document.getElementById('sSideAngle').addEventListener('input', e => {
-  SIDE_ANGLE = +e.target.value / 100; document.getElementById('vSideAngle').textContent = SIDE_ANGLE.toFixed(1);
+  SIDE_ANGLE = +e.target.value / 100; document.getElementById('vSideAngle').textContent = SIDE_ANGLE.toFixed(1); _shadowDirty = true;
 });
 
 // ── COVER SPOTS ──────────────────────────────────────────────────────────────
@@ -2814,7 +2973,7 @@ function bakeRockCanvas() {
     const ax  = rock.type === 0 ? ROCK1_W / 2 : ROCK2_W / 2;
     const ay  = rock.type === 0 ? ROCK1_H / 2 : ROCK2_H / 2;
     const sc  = rock.scale;
-    const ang = rock.angle + rock.rotOff;
+    const ang = rock.angle + rock.rotOff + Math.PI;
     const cosA = Math.cos(ang) * sc, sinA = Math.sin(ang) * sc;
 
     octx.shadowColor   = 'rgba(0,0,0,0.4)';
@@ -2992,11 +3151,11 @@ function drawCoverInsetShadow() {
 }
 
 // ── TILE NUMBERS ─────────────────────────────────────────────────────────────
-// Drawn on the grass canvas (gctx) so it sits above the grass layer
+// Phase 12: migrated to PixiJS Text objects in uiContainer (_drawTileNumbersPixi).
+// This function now only handles the Canvas2D fallback path (pre-PixiJS frames).
 function drawTileNumbers() {
-  gctx.clearRect(0, 0, W, H); // clear every frame — old drawGrassBlades() did this
+  if (window.pixiUI) return; // PixiJS path handles this in _drawOverlayLayer
   if (!showNumbers) return;
-  // FPS counter — top-left corner
   const fps = Math.round(_fpsAvg);
   const fpsColor = fps >= 50 ? '#7f7' : fps >= 30 ? '#ff7' : '#f77';
   gctx.save();
@@ -3008,7 +3167,6 @@ function drawTileNumbers() {
   gctx.fillStyle = fpsColor;
   gctx.fillText(`FPS: ${fps}`, 14, 12);
   gctx.restore();
-
   gctx.font = 'bold 14px monospace';
   gctx.textAlign = 'center';
   gctx.textBaseline = 'middle';
@@ -3039,7 +3197,7 @@ function drawTileNumbers() {
 // Outer circle
 let HALO_SCALE   = 1.21;
 let HALO_ALPHA   = 0.25;
-let hWaveAmp     = 2.4223631506575067,  hWaveFreq = 16, hDetAmp = 17.5, hDetFreq = 75, hExtraFreq = 39;
+let hWaveAmp     = 15.821499214605147,  hWaveFreq = 16, hDetAmp = 17.5, hDetFreq = 75, hExtraFreq = 39;
 const hPhase     = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hExtraPhase = Math.random()*Math.PI*2;
 function haloWaveAt(a) {
@@ -3053,7 +3211,7 @@ function haloWaveAt(a) {
 // Cutout circle
 let HALO_CUT_SCALE = 1.21;
 let HALO_OFFSET    = 300;
-let hcWaveAmp = 28.026588475078306, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
+let hcWaveAmp = 15.577277224524176, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
 const hcPhase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hcExtraPhase = Math.random()*Math.PI*2;
 function haloCutWaveAt(a) {
@@ -3329,6 +3487,52 @@ function drawDarkHalo2() {
   ctx.restore();
 }
 
+// ── DARK HALO 3 ───────────────────────────────────────────────────────────────
+let DHALO3_SCALE     = 0.865;
+let DHALO3_THICKNESS = 80;
+let DHALO3_ALPHA     = 1;
+let DHALO3_GLOW      = 29;
+let dh3WaveAmp = 1, dh3WaveFreq = 18, dh3DetAmp = 9.5, dh3DetFreq = 36, dh3ExtraFreq = 0;
+const dh3Phase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
+const dh3ExtraPhase = Math.random()*Math.PI*2;
+function darkHalo3WaveAt(a) {
+  return Math.sin(a*dh3WaveFreq+dh3Phase[0])*dh3WaveAmp
+       + Math.sin(a*Math.round(dh3WaveFreq*2)+dh3Phase[1])*(dh3WaveAmp*0.3)
+       + Math.sin(a*dh3DetFreq+dh3Phase[2])*dh3DetAmp
+       + Math.sin(a*Math.round(dh3DetFreq*1.7)+dh3Phase[3])*(dh3DetAmp*0.5)
+       + Math.sin(a*dh3ExtraFreq+dh3ExtraPhase)*dh3WaveAmp*0.5;
+}
+
+document.getElementById('sDH3Scale').addEventListener('input', e => { DHALO3_SCALE     = +e.target.value/100; document.getElementById('vDH3Scale').textContent = e.target.value+'%'; });
+document.getElementById('sDH3Thick').addEventListener('input', e => { DHALO3_THICKNESS = +e.target.value;     document.getElementById('vDH3Thick').textContent = e.target.value+'px'; });
+document.getElementById('sDH3Alpha').addEventListener('input', e => { DHALO3_ALPHA     = +e.target.value/100; document.getElementById('vDH3Alpha').textContent = e.target.value+'%'; });
+document.getElementById('sDH3Glow') .addEventListener('input', e => { DHALO3_GLOW      = +e.target.value;     document.getElementById('vDH3Glow').textContent  = e.target.value; });
+document.getElementById('sDH3Amp')  .addEventListener('input', e => { dh3WaveAmp   = +e.target.value; document.getElementById('vDH3Amp').textContent  = dh3WaveAmp; });
+document.getElementById('sDH3Freq') .addEventListener('input', e => { dh3WaveFreq  = +e.target.value; document.getElementById('vDH3Freq').textContent = dh3WaveFreq; });
+document.getElementById('sDH3Det')  .addEventListener('input', e => { dh3DetAmp    = +e.target.value; document.getElementById('vDH3Det').textContent  = dh3DetAmp; });
+document.getElementById('sDH3DFr')  .addEventListener('input', e => { dh3DetFreq   = +e.target.value; document.getElementById('vDH3DFr').textContent  = dh3DetFreq; });
+document.getElementById('sDH3EFq')  .addEventListener('input', e => { dh3ExtraFreq = +e.target.value; document.getElementById('vDH3EFq').textContent  = dh3ExtraFreq; });
+
+function drawDarkHalo3() {
+  const outerROffset = (R + SURF_R) * DHALO3_SCALE - R;
+  const innerR       = R + outerROffset - DHALO3_THICKNESS;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 50, 50, 0.9)';
+  ctx.shadowBlur  = DHALO3_GLOW;
+  ctx.beginPath();
+  for (let s = 0; s < WAVE_SEGS; s++) {
+    const r = R + outerROffset + _wDH3[s];
+    _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
+    _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
+  }
+  smoothRingPath(_hXs, _hYs); ctx.closePath();
+  ctx.arc(CX, CY, innerR, 0, Math.PI * 2, true); ctx.closePath();
+  ctx.fillStyle = `rgba(200, 30, 30, ${DHALO3_ALPHA})`;
+  ctx.fill('evenodd');
+  ctx.restore();
+}
+
 // ── INPUT ─────────────────────────────────────────────────────────────────────
 function cloudAtPoint(sx, sy) {
   const t = lastTime * 0.00035;
@@ -3401,7 +3605,7 @@ function fullGrassTile() {
   for (let d = -2; d <= 2; d++) {
     const ni  = ((top + d) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
     const t   = tiles[ni];
-    t.type = 0; t.health = 100; t.gLevel = 100; t.deadTimer = 0;
+    t.type = 0; t.health = 100; t.gLevel = 100; t.deadTimer = 0; t.sun = 100; t.water = 100;
     for (let row = 0; row < BLADE_ROW_OFFSETS.length; row++) {
       while (t.bladesByRow[row].length < MAX_BLADES) {
         t.bladesByRow[row].push({ offsetFrac: pickBladeFrac(t.bladesByRow[row], ROW_STAGGER[row]),
@@ -3563,6 +3767,7 @@ canvas.addEventListener('pointerdown', e => {
   const sx = getX(e), sy = getY(e);
   pointerDownTime = performance.now();
   lastInteractionTime = lastTime;
+  if (_playMode) togglePlayMode();
   windDragging = sy < CY - (R + SURF_R + CAP_H + WAVE_AMP); // true = touch is in the sky, not on planet
   const skyTouch = windDragging; // remember: did this tap start in the sky?
   // If the tap lands on the creature, don't treat it as a wind gesture
@@ -3716,6 +3921,15 @@ function saveDefaults() {
     ['sDH2CDet',   'dh2cDetAmp',          dh2cDetAmp],
     ['sDH2CDFr',   'dh2cDetFreq',         dh2cDetFreq],
     ['sDH2CEFq',   'dh2cExtraFreq',       dh2cExtraFreq],
+    ['sDH3Scale',  'DHALO3_SCALE',        DHALO3_SCALE],
+    ['sDH3Thick',  'DHALO3_THICKNESS',    DHALO3_THICKNESS],
+    ['sDH3Alpha',  'DHALO3_ALPHA',        DHALO3_ALPHA],
+    ['sDH3Glow',   'DHALO3_GLOW',         DHALO3_GLOW],
+    ['sDH3Amp',    'dh3WaveAmp',          dh3WaveAmp],
+    ['sDH3Freq',   'dh3WaveFreq',         dh3WaveFreq],
+    ['sDH3Det',    'dh3DetAmp',           dh3DetAmp],
+    ['sDH3DFr',    'dh3DetFreq',          dh3DetFreq],
+    ['sDH3EFq',    'dh3ExtraFreq',        dh3ExtraFreq],
     ['sTWAmp',    'tileWaveAmp',        tileWaveAmp],
     ['sTWFreq',   'tileWaveFreq',       tileWaveFreq],
     ['sGRScale',  'GRING_SCALE',         GRING_SCALE],
@@ -3957,6 +4171,121 @@ let halo2Rotation = 0;  let halo2Vel = 0;
 let halo3Rotation = 0;  let halo3Vel = 0;
 let windVel = 0;
 let playerWindVel = 0, playerWindTarget = 0, windDragging = false;
+// ── PLAY MODE ─────────────────────────────────────────────────────────────────
+let _playMode     = false;
+let _playRotating = false;
+let _playVelTarget      = 0;
+let _playEpisodeTimer   = 0;
+let _playEpisodeTotal   = 0;
+let _playIdleTimer      = 3;
+let _playWindTimer      = 0;
+let _playMovedFlag      = false;
+let _playSlowing        = false; // creature on screen → gentle fade to stop
+let _playWaterTargetRot = null;  // target rotation to park a water tile under the sun
+
+function togglePlayMode() {
+  _playMode = !_playMode;
+  const btn = document.getElementById('btnPlay');
+  if (_playMode) {
+    _startPlayEpisode();
+    _playWindTimer = 2000;
+    btn.classList.add('active');
+    btn.textContent = '⏸ Play';
+  } else {
+    _playRotating       = false;
+    _playVelTarget      = 0;
+    _playWaterTargetRot = null;
+    btn.classList.remove('active');
+    btn.textContent = '▶ Play';
+  }
+}
+
+function _startPlayEpisode() {
+  _playRotating       = true;
+  _playSlowing        = false;
+  _playMovedFlag      = false;
+  _playWaterTargetRot = null;
+  _playEpisodeTotal   = 30 + Math.random() * 40;
+  _playEpisodeTimer   = _playEpisodeTotal;
+  _playVelTarget      = (Math.random() < 0.5 ? 1 : -1) * (0.0007 + Math.random() * 0.001);
+}
+
+function _updatePlayMode(dt) {
+  if (!_playMode) return;
+  const dtSec = dt / 1000;
+
+  _playWindTimer -= dt;
+  if (_playWindTimer <= 0) {
+    const strong = Math.random() < 0.25;
+    playerWindTarget = (Math.random() < 0.5 ? 1 : -1) * MAX_WIND * (strong ? 0.85 : 0.3 + Math.random() * 0.35);
+    _playWindTimer = strong ? 9000 + Math.random() * 12000 : 2000 + Math.random() * 5000;
+  }
+
+  if (_playRotating) {
+    _playEpisodeTimer -= dtSec;
+    const elapsed = _playEpisodeTotal - _playEpisodeTimer;
+
+    if (_playMovedFlag && elapsed > 12) {
+      const visC = ((Math.round(-rotation / (Math.PI * 2) * TILE_COUNT)) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
+
+      // Water on screen: lock on to the first water tile that will pass under the sun
+      if (_playWaterTargetRot === null) {
+        const dir = velocity >= 0 ? 1 : -1;
+        let bestRot = null, bestDelta = Infinity;
+        for (let d = -22; d <= 22; d++) {
+          const idx = ((visC + d) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
+          if (tiles[idx].type !== 2) continue;
+          // Rotation that puts this tile at angle 0 (top = under sun)
+          let tRot = -((idx / TILE_COUNT) * Math.PI * 2);
+          // Shift to be ahead of current rotation in the direction of travel
+          tRot -= Math.round((tRot - rotation) / (Math.PI * 2)) * Math.PI * 2;
+          if (dir > 0 && tRot < rotation) tRot += Math.PI * 2;
+          if (dir < 0 && tRot > rotation) tRot -= Math.PI * 2;
+          const delta = Math.abs(tRot - rotation);
+          if (delta < bestDelta) { bestDelta = delta; bestRot = tRot; }
+        }
+        if (bestRot !== null) _playWaterTargetRot = bestRot;
+      }
+
+      // Creature on screen (only if no water target): simple fade to stop
+      if (_playWaterTargetRot === null && !_playSlowing) {
+        const crScreenAngle = (creaturePos / TILE_COUNT) * Math.PI * 2 + rotation;
+        const crX = CX + Math.sin(crScreenAngle) * (R + SURF_R + CAP_H + 5);
+        if (crX > 60 && crX < W - 60) _playSlowing = true;
+      }
+    }
+
+    // Velocity control
+    if (_playWaterTargetRot !== null) {
+      // Proportional deceleration: cap velocity so we coast to a stop at the target angle.
+      // Gain of 0.015 means braking starts ~(v/0.015) rad before target — typically ~4–7°.
+      const remaining = _playWaterTargetRot - rotation;
+      const maxVel = Math.abs(remaining) * 0.015;
+      _playVelTarget = Math.sign(remaining) * Math.min(Math.abs(_playVelTarget), maxVel);
+    } else if (_playSlowing) {
+      _playVelTarget *= 0.988; // gentle fade for creature
+    }
+
+    velocity += (_playVelTarget - velocity) * 0.12;
+    if (Math.abs(velocity) > 0.001) _playMovedFlag = true;
+
+    const episodeDone  = _playEpisodeTimer <= 0;
+    const waterParked  = _playWaterTargetRot !== null && Math.abs(_playWaterTargetRot - rotation) < 0.08 && Math.abs(velocity) < 0.0003;
+    const creatureDone = _playSlowing && _playMovedFlag && Math.abs(velocity) < 0.0003;
+    if (episodeDone || waterParked || creatureDone) {
+      _playRotating       = false;
+      _playSlowing        = false;
+      _playWaterTargetRot = null;
+      _playVelTarget      = 0;
+      // Nothing interesting stopped us → rotate again soon
+      const stoppedOnTarget = waterParked || creatureDone;
+      _playIdleTimer = stoppedOnTarget ? 60 + Math.random() * 120 : 5 + Math.random() * 10;
+    }
+  } else {
+    _playIdleTimer -= dtSec;
+    if (_playIdleTimer <= 0) _startPlayEpisode();
+  }
+}
 let WIND_SWIPE_STR = 0.014; // how much each swipe pixel pushes the wind target
 const MAX_WIND = 0.009;    // maximum wind velocity
 const ROT_WIND_FACTOR = 0.008; // per-frame acceleration into wind from planet spin — builds with sustained spinning
@@ -4155,6 +4484,7 @@ function drawCreature(c) {
 // is too slow to notice a 4-frame lag, but this cuts ~40,000 sin() calls/frame
 // down to ~10,000 amortised.
 function _rebuildWaveTables() {
+  if (_loopFrame % 4 !== 0) return; // halo drift is slow — 15fps table rebuilds are imperceptible
   for (let s = 0; s < WAVE_SEGS; s++) {
     const a = (s / WAVE_SEGS) * Math.PI * 2;
     _wWave[s]  = waveAt(a);
@@ -4165,6 +4495,7 @@ function _rebuildWaveTables() {
     _wH3[s]  = halo3WaveAt(a);     _wH3C[s]  = halo3CutWaveAt(a);
     _wDH[s]  = darkHaloWaveAt(a);  _wDHC[s]  = darkHaloCutWaveAt(a);
     _wDH2[s] = darkHalo2WaveAt(a); _wDH2C[s] = darkHalo2CutWaveAt(a);
+    _wDH3[s] = darkHalo3WaveAt(a);
   }
 }
 // Ensure tables are populated before the first draw
@@ -4177,7 +4508,9 @@ _rebuildWaveTables();
 let _planetOC = null, _planetOCCtx = null, _planetOCTex = null, _planetOCSprite = null;
 function _drawPlanetLayer() {
   if (!window.pixiPlanet) return;
-  if (!_planetOC || _planetOC.width !== W || _planetOC.height !== H) {
+  // Handle resize unconditionally — new canvas must be populated immediately.
+  const needsResize = !_planetOC || _planetOC.width !== W || _planetOC.height !== H;
+  if (needsResize) {
     if (_planetOCSprite) { _planetOCSprite.destroy(); _planetOCTex.destroy(true); }
     _planetOC       = new OffscreenCanvas(W, H);
     _planetOCCtx    = _planetOC.getContext('2d');
@@ -4187,6 +4520,16 @@ function _drawPlanetLayer() {
     // Force all cached gradients to re-create on the new context
     _planetGrad = null;
     _skyGrad = null; _sunBloom = null; _sunGrad = null;
+  }
+  // Tiered redraw rate: keep 60 fps while spinning, drop to 30/20 fps as planet slows.
+  // The sprite holds the last-uploaded frame, so skipped frames show a slightly stale
+  // view — imperceptible at low velocity (<2px of motion between draws).
+  if (!needsResize) {
+    const absVel = Math.abs(velocity);
+    const skipMod = absVel > 0.005 ? 1   // fast spin  → every frame
+                  : absVel > 0.001 ? 2   // slow spin  → 30 fps
+                  :                  3;  // nearly still → 20 fps
+    if (_loopFrame % skipMod !== 0) return;
   }
   const _saveCtx = ctx;
   ctx = _planetOCCtx;
@@ -4205,6 +4548,7 @@ function _drawPlanetLayer() {
   drawPlanetCover();
   drawDarkHalo2();
   drawDarkHalo();
+  drawDarkHalo3();
   drawCoverSpots();
   drawCrustDots();
   drawRocks();
@@ -4216,28 +4560,234 @@ function _drawPlanetLayer() {
 }
 
 // ── OVERLAY LAYER (Phase 7 fix) ───────────────────────────────────────────────
-// Evaporation, tile particles, and side shadows still use Canvas2D, but ctx is
-// now covered by the opaque sky sprite in PixiJS. Route them to an OffscreenCanvas
-// sprite in uiContainer so they appear above everything else in the PixiJS stack.
-let _uiOC = null, _uiOCCtx = null, _uiOCTex = null, _uiOCSprite = null;
+// Evaporation, tile particles, side shadows, and debug tile numbers all live in
+// uiContainer so they appear above everything else in the PixiJS stack.
+let _evapGfx = null, _particleGfx = null;
+let _evapDrawRotation = 0; // planet rotation at the last evaporation redraw
+// Pre-allocated point buffer reused every wisp — avoids per-frame array allocation and GC
+const _evapPts = Array.from({ length: 12 }, () => ({ x: 0, y: 0 }));
+let _shadowOC = null, _shadowOCTex = null, _shadowOCSprite = null;
+let _shadowDirty = true;
+// Debug overlay text pool: 36 tiles × 4 labels (W, S, G, H) + 1 FPS label
+let _tileNumTexts = null; // array[144] of PIXI.Text, lazily created
+let _fpsText      = null; // PIXI.Text for FPS counter
+function _drawSideShadowsPixi() {
+  if (!_shadowDirty) return;
+  _shadowDirty = false;
+  // Rebuild OffscreenCanvas when params change (not every frame — only on slider adjustments)
+  if (!_shadowOC || _shadowOC.width !== W || _shadowOC.height !== H) {
+    if (_shadowOCSprite) { _shadowOCSprite.destroy(); _shadowOCTex.destroy(true); }
+    _shadowOC       = new OffscreenCanvas(W, H);
+    _shadowOCTex    = PIXI.Texture.from(_shadowOC);
+    _shadowOCSprite = new PIXI.Sprite(_shadowOCTex);
+    window.pixiUI.addChildAt(_shadowOCSprite, 0);
+  }
+  const c = _shadowOC.getContext('2d');
+  c.clearRect(0, 0, W, H);
+  if (SIDE_ALPHA > 0) {
+    const tilt    = SIDE_ANGLE * 0.1;
+    const overflow = H * 2;
+    const rectW   = SIDE_SHIFT * 6;
+    const outset  = SIDE_SHIFT;
+    c.save();
+    c.translate(0, H / 2); c.rotate(tilt);
+    const gL = c.createLinearGradient(0, 0, SIDE_SHIFT, 0);
+    gL.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`); gL.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gL;
+    c.fillRect(-outset, -H / 2 - overflow, rectW, H + overflow * 2);
+    c.restore();
+    c.save();
+    c.translate(W, H / 2); c.rotate(-tilt);
+    const gR = c.createLinearGradient(0, 0, -SIDE_SHIFT, 0);
+    gR.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`); gR.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gR;
+    c.fillRect(-rectW, -H / 2 - overflow, rectW + outset, H + overflow * 2);
+    c.restore();
+  }
+  _shadowOCTex.source.update();
+}
+
+function _updateDrawTileParticlesPixi(dt) {
+  _particleGfx.clear();
+  if (!tileParticles.length) return;
+  for (let i = tileParticles.length - 1; i >= 0; i--) {
+    const p = tileParticles[i];
+    p.life -= dt;
+    if (p.life <= 0) { tileParticles.splice(i, 1); continue; }
+    const prevX = p.x, prevY = p.y;
+    p.vx += p.gx * dt; p.vy += p.gy * dt;
+    p.x  += p.vx * dt; p.y  += p.vy * dt;
+    const t = p.life / p.maxLife;
+    const a = Math.min(1, t * 6) * t;
+    const color = parseInt(p.color.slice(1), 16);
+    if (p.isLine) {
+      _particleGfx.moveTo(prevX, prevY).lineTo(p.x, p.y)
+        .stroke({ color, alpha: a, width: p.size * 0.7, cap: 'round' });
+    } else {
+      _particleGfx.circle(p.x, p.y, Math.max(0.5, p.size * t))
+        .fill({ color, alpha: a });
+    }
+  }
+}
+
+function _drawEvaporationPixi() {
+  _evapDrawRotation = rotation; // snapshot rotation so the per-frame delta can track it
+  _evapGfx.rotation = 0;       // geometry is built at this rotation — reset delta
+  _evapGfx.clear();
+  const visCenter = ((Math.round(-rotation / (Math.PI * 2) * TILE_COUNT)) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
+  const NUM_LINES = 3;
+  const SEGS      = 10; // segments per wisp
+  const waveAmp   = 20;
+  const EVP_COL   = 0xB9E1FA;
+
+  for (let di = -18; di <= 18; di++) {
+    const i    = (visCenter + di + TILE_COUNT) % TILE_COUNT;
+    const tile = tiles[i];
+    let distFromSun = ((i - visCenter) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
+    if (distFromSun > TILE_COUNT / 2) distFromSun = TILE_COUNT - distFromSun;
+    if (distFromSun > 7) continue;
+    if (tile.type !== 2) continue;
+
+    const tileAngle = ((i + 0.5) / TILE_COUNT) * Math.PI * 2 + rotation;
+    const ox = Math.sin(tileAngle), oy = -Math.cos(tileAngle);
+    const px = Math.cos(tileAngle), py =  Math.sin(tileAngle);
+
+    const startOffset = 80;
+    const baseX = CX + ox * (R + SURF_R + startOffset);
+    const baseY = CY + oy * (R + SURF_R + startOffset);
+    if (baseX < -60 || baseX > W + 60) continue;
+
+    const sunFrac  = Math.max(0, 1 - distFromSun / 7) * Math.min(1, tile.sun / 40);
+    const phase    = tileEvapPhase[i];
+
+    for (let ln = 0; ln < NUM_LINES; ln++) {
+      if (ln === 1) continue;
+      const latOff      = (ln - (NUM_LINES - 1) / 2) * 14;
+      const phOff       = ln * 2.3 + i * 0.7;
+      const freqMul     = 0.8 + ln * 0.35;
+      const speedMul    = 0.7 + ln * 0.4;
+      const totalLen    = 480 + Math.sin(i * 1.9 + ln * 2.3) * 130;
+      const scaledPhase = phase * speedMul;
+      const maxA        = sunFrac * 0.07;
+      if (maxA <= 0) continue;
+
+      const thickFrac   = 0.75 + 0.25 * (0.5 + 0.5 * Math.sin(i * 1.3 + ln * 2.7));
+      const lineWidth   = 70 * thickFrac;
+      // Cap amplitude to 30% of stroke width — prevents self-overlap on the waviest (thinnest) wisps
+      const lineWaveAmp = Math.min(waveAmp * (1 - (thickFrac - 0.75) * 1.2), lineWidth * 0.30);
+
+      // Fill the pre-allocated point buffer — no array allocation or GC
+      for (let k = 0; k <= SEGS; k++) {
+        const t    = k / SEGS;
+        const d    = t * totalLen;
+        const fade = Math.sin(t * Math.PI);
+        const w    = (Math.sin(-scaledPhase + phOff + t * Math.PI * 5 * freqMul) * 0.7
+                    + Math.sin((-scaledPhase + phOff) * 1.3 + t * Math.PI * 2.5 * freqMul) * 0.3)
+                   * lineWaveAmp * fade + latOff;
+        _evapPts[k].x = baseX + ox * d + px * w;
+        _evapPts[k].y = baseY + oy * d + py * w;
+      }
+
+      // Tapered filled polygon.  Width axis = planet tangent (px, py) — same axis
+      // the wave uses, so the shape is correct AND stable during rotation.
+      // Using the local path tangent instead caused vibration: differencing noisy
+      // throttled waypoints produced flickering normals each update cycle.
+      _evapGfx.moveTo(_evapPts[0].x, _evapPts[0].y); // bottom tip — halfW=0
+      for (let k = 1; k <= SEGS; k++) {
+        const halfW = lineWidth * 0.5 * Math.sin((k / SEGS) * Math.PI);
+        _evapGfx.lineTo(_evapPts[k].x + px * halfW, _evapPts[k].y + py * halfW);
+      }
+      for (let k = SEGS; k >= 0; k--) {
+        const halfW = lineWidth * 0.5 * Math.sin((k / SEGS) * Math.PI);
+        _evapGfx.lineTo(_evapPts[k].x - px * halfW, _evapPts[k].y - py * halfW);
+      }
+      _evapGfx.fill({ color: EVP_COL, alpha: maxA * 0.7 });
+    }
+  }
+}
+
+function _initTileNumTexts() {
+  const style = { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold' };
+  _tileNumTexts = [];
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const colors = [0x50B4FF, 0xFFD728, 0x5AD246, 0xFF7878]; // W, S, G, H
+    for (let slot = 0; slot < 4; slot++) {
+      const t = new PIXI.Text({ text: '', style: { ...style, fill: colors[slot] } });
+      t.anchor.set(0.5, 0.5);
+      t.visible = false;
+      window.pixiUI.addChild(t);
+      _tileNumTexts.push(t);
+    }
+  }
+  _fpsText = new PIXI.Text({ text: '', style: { fontFamily: 'monospace', fontSize: 16, fontWeight: 'bold', fill: 0x77FF77 } });
+  _fpsText.anchor.set(0, 0);
+  _fpsText.position.set(14, 12);
+  _fpsText.visible = false;
+  window.pixiUI.addChild(_fpsText);
+}
+
+function _drawTileNumbersPixi() {
+  if (!_tileNumTexts) return;
+  if (!showNumbers) {
+    if (_fpsText.visible) {
+      _fpsText.visible = false;
+      for (const t of _tileNumTexts) t.visible = false;
+    }
+    return;
+  }
+  const fps = Math.round(_fpsAvg);
+  const fpsColor = fps >= 50 ? 0x77FF77 : fps >= 30 ? 0xFFFF77 : 0xFF7777;
+  _fpsText.text = `FPS: ${fps}`;
+  _fpsText.style.fill = fpsColor;
+  _fpsText.visible = true;
+
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const base = i * 4;
+    const mid = bPt(i + 0.5, SURF_R);
+    if (mid.x < -200 || mid.x > W + 200 || mid.y > H + 100) {
+      for (let s = 0; s < 4; s++) _tileNumTexts[base + s].visible = false;
+      continue;
+    }
+    const tile = tiles[i];
+    const a  = ((i + 0.5) / TILE_COUNT) * Math.PI * 2;
+    const wv = waveAt(a);
+    const pW = bPtA(a, SURF_R + CAP_H + wv - 20);
+    const pS = bPtA(a, SURF_R + CAP_H + wv - 35);
+    const pG = bPtA(a, SURF_R + CAP_H + wv - 50);
+    const pH = bPtA(a, SURF_R + CAP_H + wv - 65);
+    _tileNumTexts[base + 0].text = 'W' + Math.round(tile.water);
+    _tileNumTexts[base + 0].position.set(pW.x, pW.y); _tileNumTexts[base + 0].visible = true;
+    _tileNumTexts[base + 1].text = 'S' + Math.round(tile.sun);
+    _tileNumTexts[base + 1].position.set(pS.x, pS.y); _tileNumTexts[base + 1].visible = true;
+    if (tile.type === 0) {
+      _tileNumTexts[base + 2].text = 'G' + Math.round(getGLevel(tile));
+      _tileNumTexts[base + 2].position.set(pG.x, pG.y); _tileNumTexts[base + 2].visible = true;
+      _tileNumTexts[base + 3].text = 'H' + Math.round(tile.health);
+      _tileNumTexts[base + 3].position.set(pH.x, pH.y); _tileNumTexts[base + 3].visible = true;
+    } else {
+      _tileNumTexts[base + 2].visible = false;
+      _tileNumTexts[base + 3].visible = false;
+    }
+  }
+}
+
 function _drawOverlayLayer(dt) {
   if (!window.pixiUI) { drawEvaporation(); updateDrawTileParticles(dt); drawSideShadows(); return; }
-  if (!_uiOC || _uiOC.width !== W || _uiOC.height !== H) {
-    if (_uiOCSprite) { _uiOCSprite.destroy(); _uiOCTex.destroy(true); }
-    _uiOC       = new OffscreenCanvas(W, H);
-    _uiOCCtx    = _uiOC.getContext('2d');
-    _uiOCTex    = PIXI.Texture.from(_uiOC);
-    _uiOCSprite = new PIXI.Sprite(_uiOCTex);
-    window.pixiUI.addChild(_uiOCSprite);
+  if (!_particleGfx) {
+    _evapGfx     = new PIXI.Graphics(); window.pixiUI.addChild(_evapGfx);
+    _evapGfx.pivot.set(CX, CY);
+    _evapGfx.position.set(CX, CY);
+    _particleGfx = new PIXI.Graphics(); window.pixiUI.addChild(_particleGfx);
+    _shadowDirty = true;
+    _initTileNumTexts();
+    grassCanvas.style.display = 'none'; // gc canvas no longer needed — PixiJS handles tile numbers
   }
-  const _saveCtx = ctx;
-  ctx = _uiOCCtx;
-  ctx.clearRect(0, 0, W, H);
-  drawEvaporation();
-  updateDrawTileParticles(dt);
-  drawSideShadows();
-  ctx = _saveCtx;
-  _uiOCTex.source.update();
+  _evapGfx.rotation = rotation - _evapDrawRotation; // track planet rotation between throttled redraws
+  _updateDrawTileParticlesPixi(dt);  // every frame — interactive feedback
+  _drawSideShadowsPixi();            // only redraws when a slider changes
+  _drawTileNumbersPixi();            // every frame — tile debug overlay
+  if (_loopFrame % 3 !== 0) return;
+  _drawEvaporationPixi();            // throttled — ambient water shimmer
 }
 
 // ── LOOP ──────────────────────────────────────────────────────────────────────
@@ -4247,6 +4797,7 @@ function loop(time) {
   _loopFrame = (_loopFrame + 1) | 0;
   const dt = Math.min(time - lastTime, 50);
   lastTime = time;
+  _updatePlayMode(dt);
   velocity *= FRICTION;
   if (isDragging && !moved && !windDragging && !dragOnCreature) {
     // Hold: blend velocity toward spring target so existing momentum decays naturally
@@ -4262,7 +4813,7 @@ function loop(time) {
   rotDriftWind += rotWindVel * ROT_WIND_FACTOR; // accumulates while spinning
   rotDriftWind = Math.max(-MAX_WIND, Math.min(MAX_WIND, rotDriftWind));
   rotDriftWind *= 0.993; // fades ~2s after spinning stops
-  if (Math.abs(velocity) < MIN_VEL) velocity = 0;
+  if (Math.abs(velocity) < MIN_VEL && !(_playMode && _playRotating)) velocity = 0;
   rotation += velocity;
   sinRot = Math.sin(rotation); cosRot = Math.cos(rotation);
   if (isDragging) recentVel += (lastDX / R - recentVel) * 0.2;
@@ -4335,7 +4886,7 @@ function loop(time) {
     }
     // Scale check interval: 1 tile → 1800ms, 5+ tiles → 400ms
     const evapStrength = Math.min(1, evapCount / 5);
-    evapTimer = 3000 - evapStrength * 2330 + Math.random() * 670;
+    evapTimer = 1500 - evapStrength * 1200 + Math.random() * 400;
 
     for (let d = -14; d <= 14; d++) {
       const idx = (sunC + d + TILE_COUNT) % TILE_COUNT;
@@ -4357,8 +4908,8 @@ function loop(time) {
       spawnEvaporationCloud(idx);
       // Post-spawn cooldown also scales with evaporation strength
       evapTimer = allFar
-        ? 2670 - evapStrength * 1670 + Math.random() * 1000
-        : 8330 - evapStrength * 5000 + Math.random() * 1670;
+        ? 1000 - evapStrength * 600  + Math.random() * 400
+        : 2000 - evapStrength * 1000 + Math.random() * 500;
       break;
     }
   }
