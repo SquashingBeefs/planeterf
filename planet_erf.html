@@ -72,10 +72,10 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 28px) scale(1.13906);">
+  <div id="game" style="width: 1920px; height: 920px; transform: translate(0px, 6px) scale(1.03958);">
     <canvas id="c" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; opacity: 0;"></canvas>
     
-    <canvas width="3360" height="1610" style="position: absolute; top: 0px; left: 0px; width: 1920px; height: 920px; pointer-events: none; cursor: inherit;"></canvas><canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas><canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas>
+    <canvas width="3360" height="1610" style="position: absolute; top: 0px; left: 0px; width: 1920px; height: 920px; pointer-events: none; cursor: inherit;"></canvas><canvas width="3696" height="1771" style="position: absolute; top: 0px; left: 0px; width: 1920px; height: 920px; pointer-events: none; cursor: inherit;"></canvas><canvas id="gc" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas><canvas id="btf" width="1920" height="920" style="width: 1920px; height: 920px; position: absolute; top: 0px; left: 0px; pointer-events: none; display: none;"></canvas>
     <button id="fsBtn" title="Fullscreen" style="display: block;">⛶</button>
     <div id="ui" style="">Swipe the Earth to spin it &nbsp;·&nbsp; Swipe the air to move the wind &nbsp;·&nbsp; Squish or double-click clouds to rain</div>
     <div id="controls" style="">
@@ -338,9 +338,8 @@
         </div>
       </div>
       <div id="strata-s3" data-group="strata" style="">
-        <div class="row"><label>Scale</label>      <input type="range" id="sDH3Scale" min="50" max="115" step="0.5" value="86.5"><span id="vDH3Scale">86.5%</span></div>
+        <div class="row"><label>Scale</label>      <input type="range" id="sDH3Scale" min="50" max="115" step="0.5" value="85.5"><span id="vDH3Scale">85.5%</span></div>
         <div class="row"><label>Thickness</label>  <input type="range" id="sDH3Thick" min="2" max="80" step="1" value="80"><span id="vDH3Thick">80px</span></div>
-        <div class="row"><label>Alpha</label>      <input type="range" id="sDH3Alpha" min="0" max="100" step="1" value="100"><span id="vDH3Alpha">100%</span></div>
         <div class="row"><label>Glow</label>       <input type="range" id="sDH3Glow" min="0" max="80" step="1" value="29"><span id="vDH3Glow">29</span></div>
         <div class="row"><label>Amplitude</label>  <input type="range" id="sDH3Amp" min="1" max="60" step="1" value="1"><span id="vDH3Amp">1</span></div>
         <div class="row"><label>Frequency</label>  <input type="range" id="sDH3Freq" min="1" max="40" step="1" value="18"><span id="vDH3Freq">18</span></div>
@@ -608,7 +607,7 @@ let HALO2_SCALE = 1.16;
 let HALO2_ALPHA = 0.14;
 let HALO2_CUT_SCALE = 1.12;
 let HALO2_OFFSET = -24;
-let h2WaveAmp = 19.16188476826922, h2WaveFreq = 28, h2DetAmp = 0, h2DetFreq = 1, h2ExtraFreq = 30;
+let h2WaveAmp = 18.8553845265235, h2WaveFreq = 28, h2DetAmp = 0, h2DetFreq = 1, h2ExtraFreq = 30;
 const h2Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2ExtraPhase = Math.random()*Math.PI*2;
 function halo2WaveAt(a) {
@@ -618,7 +617,7 @@ function halo2WaveAt(a) {
        + Math.sin(a*Math.round(h2DetFreq*1.7)+h2Phase[3])*(h2DetAmp*0.5)
        + Math.sin(a*h2ExtraFreq+h2ExtraPhase)*h2WaveAmp*0.5;
 }
-let h2cWaveAmp = 0.34736520483332756, h2cWaveFreq = 28, h2cDetAmp = 0, h2cDetFreq = 1, h2cExtraFreq = 30;
+let h2cWaveAmp = -9.782874660314643, h2cWaveFreq = 28, h2cDetAmp = 0, h2cDetFreq = 1, h2cExtraFreq = 30;
 const h2cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h2cExtraPhase = Math.random()*Math.PI*2;
 function halo2CutWaveAt(a) {
@@ -635,7 +634,7 @@ let HALO3_SCALE = 1.125;
 let HALO3_ALPHA = 0.08;
 let HALO3_CUT_SCALE = 1.115;
 let HALO3_OFFSET = 60;
-let h3WaveAmp = 27.820468503208136, h3WaveFreq = 19, h3DetAmp = 7, h3DetFreq = 15, h3ExtraFreq = 14;
+let h3WaveAmp = 16.62425647912034, h3WaveFreq = 19, h3DetAmp = 7, h3DetFreq = 15, h3ExtraFreq = 14;
 const h3Phase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3ExtraPhase = Math.random()*Math.PI*2;
 function halo3WaveAt(a) {
@@ -645,7 +644,7 @@ function halo3WaveAt(a) {
        + Math.sin(a*Math.round(h3DetFreq*1.7)+h3Phase[3])*(h3DetAmp*0.5)
        + Math.sin(a*h3ExtraFreq+h3ExtraPhase)*h3WaveAmp*0.5;
 }
-let h3cWaveAmp = 25.10701033312867, h3cWaveFreq = 7, h3cDetAmp = 8, h3cDetFreq = 26, h3cExtraFreq = 14;
+let h3cWaveAmp = 29.26716059819844, h3cWaveFreq = 7, h3cDetAmp = 8, h3cDetFreq = 26, h3cExtraFreq = 14;
 const h3cPhase = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const h3cExtraPhase = Math.random()*Math.PI*2;
 function halo3CutWaveAt(a) {
@@ -3197,7 +3196,7 @@ function drawTileNumbers() {
 // Outer circle
 let HALO_SCALE   = 1.21;
 let HALO_ALPHA   = 0.25;
-let hWaveAmp     = 15.821499214605147,  hWaveFreq = 16, hDetAmp = 17.5, hDetFreq = 75, hExtraFreq = 39;
+let hWaveAmp     = 9.694127036005172,  hWaveFreq = 16, hDetAmp = 17.5, hDetFreq = 75, hExtraFreq = 39;
 const hPhase     = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hExtraPhase = Math.random()*Math.PI*2;
 function haloWaveAt(a) {
@@ -3211,7 +3210,7 @@ function haloWaveAt(a) {
 // Cutout circle
 let HALO_CUT_SCALE = 1.21;
 let HALO_OFFSET    = 300;
-let hcWaveAmp = 15.577277224524176, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
+let hcWaveAmp = 29.96836779106036, hcWaveFreq = 29, hcDetAmp = 6, hcDetFreq = 35, hcExtraFreq = 20;
 const hcPhase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
 const hcExtraPhase = Math.random()*Math.PI*2;
 function haloCutWaveAt(a) {
@@ -3488,9 +3487,8 @@ function drawDarkHalo2() {
 }
 
 // ── DARK HALO 3 ───────────────────────────────────────────────────────────────
-let DHALO3_SCALE     = 0.865;
+let DHALO3_SCALE     = 0.855;
 let DHALO3_THICKNESS = 80;
-let DHALO3_ALPHA     = 1;
 let DHALO3_GLOW      = 29;
 let dh3WaveAmp = 1, dh3WaveFreq = 18, dh3DetAmp = 9.5, dh3DetFreq = 36, dh3ExtraFreq = 0;
 const dh3Phase      = [0,1,2,3].map(() => Math.random()*Math.PI*2);
@@ -3505,7 +3503,6 @@ function darkHalo3WaveAt(a) {
 
 document.getElementById('sDH3Scale').addEventListener('input', e => { DHALO3_SCALE     = +e.target.value/100; document.getElementById('vDH3Scale').textContent = e.target.value+'%'; });
 document.getElementById('sDH3Thick').addEventListener('input', e => { DHALO3_THICKNESS = +e.target.value;     document.getElementById('vDH3Thick').textContent = e.target.value+'px'; });
-document.getElementById('sDH3Alpha').addEventListener('input', e => { DHALO3_ALPHA     = +e.target.value/100; document.getElementById('vDH3Alpha').textContent = e.target.value+'%'; });
 document.getElementById('sDH3Glow') .addEventListener('input', e => { DHALO3_GLOW      = +e.target.value;     document.getElementById('vDH3Glow').textContent  = e.target.value; });
 document.getElementById('sDH3Amp')  .addEventListener('input', e => { dh3WaveAmp   = +e.target.value; document.getElementById('vDH3Amp').textContent  = dh3WaveAmp; });
 document.getElementById('sDH3Freq') .addEventListener('input', e => { dh3WaveFreq  = +e.target.value; document.getElementById('vDH3Freq').textContent = dh3WaveFreq; });
@@ -3518,7 +3515,7 @@ function drawDarkHalo3() {
   const innerR       = R + outerROffset - DHALO3_THICKNESS;
 
   ctx.save();
-  ctx.shadowColor = 'rgba(255, 180, 50, 0.9)';
+  ctx.shadowColor = 'rgba(255, 111, 50, 0.9)';
   ctx.shadowBlur  = DHALO3_GLOW;
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
@@ -3528,7 +3525,7 @@ function drawDarkHalo3() {
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.arc(CX, CY, innerR, 0, Math.PI * 2, true); ctx.closePath();
-  ctx.fillStyle = `rgba(200, 30, 30, ${DHALO3_ALPHA})`;
+  ctx.fillStyle = 'rgba(249, 42, 0, 1)';
   ctx.fill('evenodd');
   ctx.restore();
 }
@@ -3923,7 +3920,6 @@ function saveDefaults() {
     ['sDH2CEFq',   'dh2cExtraFreq',       dh2cExtraFreq],
     ['sDH3Scale',  'DHALO3_SCALE',        DHALO3_SCALE],
     ['sDH3Thick',  'DHALO3_THICKNESS',    DHALO3_THICKNESS],
-    ['sDH3Alpha',  'DHALO3_ALPHA',        DHALO3_ALPHA],
     ['sDH3Glow',   'DHALO3_GLOW',         DHALO3_GLOW],
     ['sDH3Amp',    'dh3WaveAmp',          dh3WaveAmp],
     ['sDH3Freq',   'dh3WaveFreq',         dh3WaveFreq],
