@@ -419,6 +419,10 @@ const BIRD_MAX   = 16000;
 const isMobile = navigator.maxTouchPoints > 0 && Math.min(window.innerWidth, window.innerHeight) < 1024;
 const NATIVE_W = 1920, NATIVE_H = 920;
 let W = NATIVE_W, H = NATIVE_H, R, CX, CY, currentDpr = 1;
+// Visible horizontal bounds in game coordinates. Equal to [0, W] except on
+// portrait phones, where the canvas is wider than the screen and the sides are
+// cropped — effects anchored to the screen edges (side shadows) must use these.
+let visL = 0, visR = NATIVE_W;
 let rockCanvas = null, crustDotCanvas = null, coverSpotsCanvas = null;
 let lastR = null;
 let _skyGrad = null, _planetGrad = null;
@@ -435,15 +439,20 @@ function layout() {
     const offsetX = Math.round((vw - GAME_W * scale) / 2);
     const offsetY = Math.round((vh - GAME_H * scale) / 2);
     game.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+    // The sides of the 760px canvas are cropped off-screen — record where the
+    // visible window actually starts/ends in game coordinates.
+    visL = -offsetX / scale; visR = (vw - offsetX) / scale;
   } else if (isMobile) {
     W = vw; H = vh;
     game.style.transform = 'translate(0px, 0px) scale(1)';
+    visL = 0; visR = W;
   } else {
     W = NATIVE_W; H = NATIVE_H;
     const scale = Math.min(vw / NATIVE_W, vh / NATIVE_H);
     const tx = Math.round((vw - NATIVE_W * scale) / 2);
     const ty = Math.round((vh - NATIVE_H * scale) / 2);
     game.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    visL = 0; visR = W;
   }
   canvas.width  = W; canvas.height  = H;
   canvas.style.width  = W + 'px'; canvas.style.height  = H + 'px';
@@ -4804,14 +4813,17 @@ function drawSideShadows() {
   if (SIDE_ALPHA <= 0) return;
   const tilt    = SIDE_ANGLE * 0.1;
   const overflow = H * 2;
-  const rectW   = SIDE_SHIFT * 6;
-  const outset  = SIDE_SHIFT; // push outer edge this far off-screen
+  // Anchor to the visible screen edges and scale with the visible width — see
+  // _drawSideShadowsPixi for the portrait-phone cropping explanation.
+  const shift   = SIDE_SHIFT * (visR - visL) / NATIVE_W;
+  const rectW   = shift * 6;
+  const outset  = shift; // push outer edge this far off-screen
 
   // Left — rotate around left-center so top leans inward
   ctx.save();
-  ctx.translate(0, H / 2);
+  ctx.translate(visL, H / 2);
   ctx.rotate(tilt);
-  const gL = ctx.createLinearGradient(0, 0, SIDE_SHIFT, 0);
+  const gL = ctx.createLinearGradient(0, 0, shift, 0);
   gL.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`);
   gL.addColorStop(1, `rgba(0,0,0,0)`);
   ctx.fillStyle = gL;
@@ -4820,9 +4832,9 @@ function drawSideShadows() {
 
   // Right — mirror
   ctx.save();
-  ctx.translate(W, H / 2);
+  ctx.translate(visR, H / 2);
   ctx.rotate(-tilt);
-  const gR = ctx.createLinearGradient(0, 0, -SIDE_SHIFT, 0);
+  const gR = ctx.createLinearGradient(0, 0, -shift, 0);
   gR.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`);
   gR.addColorStop(1, `rgba(0,0,0,0)`);
   ctx.fillStyle = gR;
@@ -5454,13 +5466,16 @@ let _evapDrawRotation = 0; // planet rotation at the last evaporation redraw
 const _evapPts = Array.from({ length: 12 }, () => ({ x: 0, y: 0 }));
 let _shadowOC = null, _shadowOCTex = null, _shadowOCSprite = null;
 let _shadowDirty = true;
+let _shadowDrawnKey = ''; // layout snapshot at the last redraw — catches resizes
 // Debug overlay text pool: 36 tiles × 4 labels (W, S, G, H) + 1 FPS label
 let _tileNumTexts = null; // array[144] of PIXI.Text, lazily created
 let _fpsText      = null; // PIXI.Text for FPS counter
 function _drawSideShadowsPixi() {
-  if (!_shadowDirty) return;
-  _shadowDirty = false;
-  // Rebuild OffscreenCanvas when params change (not every frame — only on slider adjustments)
+  // Redraw on slider changes OR when the layout shifts (resize / rotate)
+  const key = `${W},${H},${visL},${visR}`;
+  if (!_shadowDirty && key === _shadowDrawnKey) return;
+  _shadowDirty = false; _shadowDrawnKey = key;
+  // Rebuild OffscreenCanvas when the canvas size changed
   if (!_shadowOC || _shadowOC.width !== W || _shadowOC.height !== H) {
     if (_shadowOCSprite) { _shadowOCSprite.destroy(); _shadowOCTex.destroy(true); }
     _shadowOC       = new OffscreenCanvas(W, H);
@@ -5473,18 +5488,22 @@ function _drawSideShadowsPixi() {
   if (SIDE_ALPHA > 0) {
     const tilt    = SIDE_ANGLE * 0.1;
     const overflow = H * 2;
-    const rectW   = SIDE_SHIFT * 6;
-    const outset  = SIDE_SHIFT;
+    // Anchor to the VISIBLE screen edges (on portrait phones the canvas is wider
+    // than the screen) and scale the gradient width to the visible region so the
+    // vignette looks the same proportion on every device.
+    const shift   = SIDE_SHIFT * (visR - visL) / NATIVE_W;
+    const rectW   = shift * 6;
+    const outset  = shift;
     c.save();
-    c.translate(0, H / 2); c.rotate(tilt);
-    const gL = c.createLinearGradient(0, 0, SIDE_SHIFT, 0);
+    c.translate(visL, H / 2); c.rotate(tilt);
+    const gL = c.createLinearGradient(0, 0, shift, 0);
     gL.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`); gL.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = gL;
     c.fillRect(-outset, -H / 2 - overflow, rectW, H + overflow * 2);
     c.restore();
     c.save();
-    c.translate(W, H / 2); c.rotate(-tilt);
-    const gR = c.createLinearGradient(0, 0, -SIDE_SHIFT, 0);
+    c.translate(visR, H / 2); c.rotate(-tilt);
+    const gR = c.createLinearGradient(0, 0, -shift, 0);
     gR.addColorStop(0, `rgba(0,0,0,${SIDE_ALPHA})`); gR.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = gR;
     c.fillRect(-rectW, -H / 2 - overflow, rectW + outset, H + overflow * 2);
