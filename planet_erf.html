@@ -609,6 +609,13 @@ const _wDH3   = new Float32Array(WAVE_SEGS);
 const _grXs = new Float32Array(WAVE_SEGS), _grYs = new Float32Array(WAVE_SEGS);
 const _grHXs = new Float32Array(WAVE_SEGS), _grHYs = new Float32Array(WAVE_SEGS);
 const _hXs  = new Float32Array(WAVE_SEGS), _hYs  = new Float32Array(WAVE_SEGS);
+// Outer-ring radius per segment, kept while building the matching cut ring so
+// the cut can be clamped to never cross the outer edge (see HALO_MIN_GAP)
+const _hOutR = new Float32Array(WAVE_SEGS);
+// Minimum gap (px) between a halo's outer edge and its cutout edge. The wave
+// undulations + amplitude drift can otherwise make the two lines cross, which
+// flips the evenodd fill into stray slivers.
+const HALO_MIN_GAP = 8;
 // Cached sin/cos of rotation — updated once per frame before any draw calls
 let sinRot = 0, cosRot = 1;
 const wavePhase  = [0,1,2,3].map(() => Math.random()*Math.PI*2);
@@ -2531,6 +2538,23 @@ function spawnEvaporationCloud(tileIdx) {
   cloudSpawnDelay    = 1000 + Math.random() * 1000;
 }
 
+// ── DEFERRED TEXTURE DESTRUCTION ─────────────────────────────────────────────
+// Destroying a texture while a sprite still references it makes the PixiJS
+// render pass throw — and a renderer that throws right after clearing the
+// screen shows up as a permanent blank screen. Texture caches must never
+// destroy entries directly (a sprite may hold one until it's reassigned next
+// frame); they park them here instead, and the game loop destroys them a few
+// frames later once nothing can be pointing at them.
+const _texGraveyard = []; // { tex, frame } in park order
+function _deferTexDestroy(tex) {
+  _texGraveyard.push({ tex, frame: _loopFrame });
+}
+function _flushTexGraveyard() {
+  while (_texGraveyard.length && _loopFrame - _texGraveyard[0].frame >= 3) {
+    _texGraveyard.shift().tex.destroy(true);
+  }
+}
+
 // ── CLOUD PIXI MIGRATION ──────────────────────────────────────────────────────
 // Each puff is ONE plain sprite. The white puff AND its clipped shadow crescent
 // are baked together into a texture, so the whole cloud layer batches into a
@@ -2579,9 +2603,10 @@ function _getPuffShadowTex(qx, qy) {
   // Safety valve. The full reachable offset set is ~300 cells (sun shift ×
   // vertical band), so 400 never trips in normal play — slider changes go
   // through _invalidatePuffTexture instead. If it does trip, everything
-  // re-bakes lazily within a frame.
+  // re-bakes lazily within a frame. Evicted textures are PARKED, not destroyed
+  // — puff sprites still reference them until drawClouds reassigns next frame.
   if (_puffShadowTexCache.size >= 400) {
-    for (const t of _puffShadowTexCache.values()) t.destroy(true);
+    for (const t of _puffShadowTexCache.values()) _deferTexDestroy(t);
     _puffShadowTexCache.clear();
   }
   const oc = new OffscreenCanvas(_PUFF_W, _PUFF_H);
@@ -2603,8 +2628,8 @@ function _getPuffShadowTex(qx, qy) {
 }
 
 function _invalidatePuffTexture() {
-  if (_puffTex) { _puffTex.destroy(true); _puffTex = null; }
-  for (const t of _puffShadowTexCache.values()) t.destroy(true);
+  if (_puffTex) { _deferTexDestroy(_puffTex); _puffTex = null; }
+  for (const t of _puffShadowTexCache.values()) _deferTexDestroy(t);
   _puffShadowTexCache.clear(); // CLOUD_SHD_SCALE is baked in — re-bake on slider change
   _bakePuffTexture();
   // Destroy all cloud pixi objects — they'll be lazily recreated next frame via _addCloudPixi.
@@ -3566,8 +3591,10 @@ function loadCreatureVariant(def) {
   const svg = buildCreatureSVG(def);
   creatureSvgText = svg;
   creatureImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  // New look → every cached pose is stale
-  _frameCacheReset(_c1FrameCache);
+  // New look → every cached pose is stale. The on-screen texture is parked
+  // (not destroyed) so the sprite stays valid until it falls back to the
+  // freshly loaded base image next frame.
+  _frameCacheReset(_c1FrameCache, null);
   _c1FrameTex = null;
 }
 
@@ -3584,8 +3611,14 @@ const _c2FrameCache = new Map(); // "qa|qtail|blink" → PIXI.Texture
 let _c1FrameTex = null, _c2FrameTex = null; // texture currently displayed
 let _c1Baking = false, _c2Baking = false;   // one bake in flight per creature
 
-function _frameCacheReset(cache) {
-  for (const t of cache.values()) t.destroy(true);
+// Clears a pose cache. Textures are parked in the graveyard (a sprite may
+// still reference one until it's reassigned). `keepTex` — the texture
+// currently on screen — is spared entirely: its replacement bakes
+// asynchronously, so it must stay valid until the new frame arrives.
+function _frameCacheReset(cache, keepTex) {
+  for (const t of cache.values()) {
+    if (t !== keepTex) _deferTexDestroy(t);
+  }
   cache.clear();
 }
 
@@ -3611,7 +3644,7 @@ function _requestC1Frame(qa, qtail) {
   const hit = _c1FrameCache.get(key);
   if (hit) { _c1FrameTex = hit; return; }
   if (_c1Baking || !creatureSvgText) return; // busy — caller re-requests next frame
-  if (_c1FrameCache.size >= 256) _frameCacheReset(_c1FrameCache);
+  if (_c1FrameCache.size >= 256) _frameCacheReset(_c1FrameCache, _c1FrameTex);
   _c1Baking = true;
   // pair1 = BackFrontLeg + FrontInsetLeg swings with qa, pair2 opposite
   const angles = { BackFrontLeg: qa, FrontTopLeg: -qa, BackInsetLeg: -qa, FrontInsetLeg: qa, Tail: qtail };
@@ -3631,7 +3664,7 @@ function _requestC2Frame(qa, qtail, blink) {
   const hit = _c2FrameCache.get(key);
   if (hit) { _c2FrameTex = hit; return; }
   if (_c2Baking || !c2SvgText) return;
-  if (_c2FrameCache.size >= 256) _frameCacheReset(_c2FrameCache);
+  if (_c2FrameCache.size >= 256) _frameCacheReset(_c2FrameCache, _c2FrameTex);
   _c2Baking = true;
   const angles = { BackFrontLeg: qa, FrontTopLeg: -qa, BackInsetLeg: -qa, FrontBackLeg: qa, tail: qtail };
   let svg = c2SvgText;
@@ -3981,14 +4014,20 @@ function drawHalo(rot = rotation, shiftX = 0) {
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
     const r = R + outerROffset + _wH[s];
+    _hOutR[s] = r;
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
     _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + _wHC[s];
+    const k = waveCos[s] * cosH - waveSin[s] * sinH; // radial screen-up component
+    // Clamp the cut so it stays ≥HALO_MIN_GAP inside the outer edge. The cut
+    // ring is drawn from a centre shifted by HALO_OFFSET, which moves its
+    // points by ≈ −HALO_OFFSET·k in planet-radial terms — folded in so the
+    // clamp holds in screen space, where the crossing is visible.
+    const r = Math.min(R + cutROffset + _wHC[s], _hOutR[s] - HALO_MIN_GAP + HALO_OFFSET * k);
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    _hYs[s] = (CY + HALO_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
+    _hYs[s] = (CY + HALO_OFFSET) - k * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO_ALPHA})`;
@@ -4005,14 +4044,17 @@ function drawHalo2(rot = rotation, shiftX = 0) {
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
     const r = R + outerROffset + _wH2[s];
+    _hOutR[s] = r;
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
     _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + _wH2C[s];
+    const k = waveCos[s] * cosH - waveSin[s] * sinH;
+    // Keep the cut ≥HALO_MIN_GAP inside the outer edge (see drawHalo)
+    const r = Math.min(R + cutROffset + _wH2C[s], _hOutR[s] - HALO_MIN_GAP + HALO2_OFFSET * k);
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    _hYs[s] = (CY + HALO2_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
+    _hYs[s] = (CY + HALO2_OFFSET) - k * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO2_ALPHA})`;
@@ -4029,14 +4071,17 @@ function drawHalo3(rot = rotation, shiftX = 0) {
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
     const r = R + outerROffset + _wH3[s];
+    _hOutR[s] = r;
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
     _hYs[s] = CY  - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + _wH3C[s];
+    const k = waveCos[s] * cosH - waveSin[s] * sinH;
+    // Keep the cut ≥HALO_MIN_GAP inside the outer edge (see drawHalo)
+    const r = Math.min(R + cutROffset + _wH3C[s], _hOutR[s] - HALO_MIN_GAP + HALO3_OFFSET * k);
     _hXs[s] = CX + shiftX + (waveSin[s] * cosH + waveCos[s] * sinH) * r;
-    _hYs[s] = (CY + HALO3_OFFSET) - (waveCos[s] * cosH - waveSin[s] * sinH) * r;
+    _hYs[s] = (CY + HALO3_OFFSET) - k * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   ctx.fillStyle = `rgba(255,255,255,${HALO3_ALPHA})`;
@@ -4097,12 +4142,14 @@ function drawDarkHalo() {
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
     const r = R + outerROffset + _wDH[s];
+    _hOutR[s] = r;
     _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
     _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + _wDHC[s];
+    // Keep the cut ≥HALO_MIN_GAP inside the outer edge (see drawHalo)
+    const r = Math.min(R + cutROffset + _wDHC[s], _hOutR[s] - HALO_MIN_GAP);
     _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
     _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
@@ -4162,12 +4209,14 @@ function drawDarkHalo2() {
   ctx.beginPath();
   for (let s = 0; s < WAVE_SEGS; s++) {
     const r = R + outerROffset + _wDH2[s];
+    _hOutR[s] = r;
     _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
     _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
   smoothRingPath(_hXs, _hYs); ctx.closePath();
   for (let s = 0; s < WAVE_SEGS; s++) {
-    const r = R + cutROffset + _wDH2C[s];
+    // Keep the cut ≥HALO_MIN_GAP inside the outer edge (see drawHalo)
+    const r = Math.min(R + cutROffset + _wDH2C[s], _hOutR[s] - HALO_MIN_GAP);
     _hXs[s] = CX + (waveSin[s] * cosRot + waveCos[s] * sinRot) * r;
     _hYs[s] = CY - (waveCos[s] * cosRot - waveSin[s] * sinRot) * r;
   }
@@ -5283,22 +5332,74 @@ function _rebuildWaveTables() {
 // Ensure tables are populated before the first draw
 _rebuildWaveTables();
 
+// ── REAR STACK (halos + planet body + green rings) ──────────────────────────
+// Everything that renders BELOW the tiles. These layers move with wind and
+// parallax easing (not planet rotation) and can keep drifting long after a
+// spin; sharing a canvas with the tiles meant either stuttery 20Hz halos or
+// repainting the whole expensive world stack at 60Hz during every breeze.
+// On their own canvas they're just six flat fills — cheap enough to repaint
+// at full framerate whenever they move ≥0.5px, and fully idle when parked.
+let _rearOC = null, _rearOCCtx = null, _rearOCTex = null, _rearOCSprite = null;
+const _rearRotsAtPaint = [9, 9, 9, 9, 9];     // halo/ring rotations at last repaint
+const _rearAmpsAtPaint = [0, 0, 0, 0, 0, 0];  // halo wave amplitudes at last repaint
+
+function _drawRearLayer() {
+  if (!window.pixiPlanet) return;
+  const needsResize = !_rearOC || _rearOC.width !== W || _rearOC.height !== H;
+  if (needsResize) {
+    if (_rearOCSprite) { _rearOCSprite.destroy(); _rearOCTex.destroy(true); }
+    _rearOC       = new OffscreenCanvas(W, H);
+    _rearOCCtx    = _rearOC.getContext('2d');
+    _rearOCTex    = PIXI.Texture.from(_rearOC);
+    _rearOCSprite = new PIXI.Sprite(_rearOCTex);
+    window.pixiPlanet.addChildAt(_rearOCSprite, 0); // below the world sprite
+    _planetGrad = null;
+  }
+  const eps = 0.5 / R; // ≥0.5 screen-px of movement at the surface
+  const moved = Math.abs(haloRotation  - _rearRotsAtPaint[0]) >= eps
+             || Math.abs(halo2Rotation - _rearRotsAtPaint[1]) >= eps
+             || Math.abs(halo3Rotation - _rearRotsAtPaint[2]) >= eps
+             || Math.abs(assetRotation - _rearRotsAtPaint[3]) >= eps
+             || Math.abs(rearRotation  - _rearRotsAtPaint[4]) >= eps;
+  // The halo waves "breathe" — amplitudes drift slowly over minutes
+  const drift = Math.abs(hWaveAmp   - _rearAmpsAtPaint[0])
+              + Math.abs(hcWaveAmp  - _rearAmpsAtPaint[1])
+              + Math.abs(h2WaveAmp  - _rearAmpsAtPaint[2])
+              + Math.abs(h2cWaveAmp - _rearAmpsAtPaint[3])
+              + Math.abs(h3WaveAmp  - _rearAmpsAtPaint[4])
+              + Math.abs(h3cWaveAmp - _rearAmpsAtPaint[5]);
+  if (!needsResize && !moved && drift < 0.75) return;
+  _rearRotsAtPaint[0] = haloRotation;  _rearRotsAtPaint[1] = halo2Rotation;
+  _rearRotsAtPaint[2] = halo3Rotation; _rearRotsAtPaint[3] = assetRotation;
+  _rearRotsAtPaint[4] = rearRotation;
+  _rearAmpsAtPaint[0] = hWaveAmp;  _rearAmpsAtPaint[1] = hcWaveAmp;
+  _rearAmpsAtPaint[2] = h2WaveAmp; _rearAmpsAtPaint[3] = h2cWaveAmp;
+  _rearAmpsAtPaint[4] = h3WaveAmp; _rearAmpsAtPaint[5] = h3cWaveAmp;
+  const _saveCtx = ctx;
+  ctx = _rearOCCtx;
+  ctx.clearRect(0, 0, W, H);
+  drawHalo(haloRotation);
+  drawPlanetBody();
+  drawGreenRingRear();
+  drawHalo2(halo2Rotation);
+  drawGreenRing();
+  drawHalo3(halo3Rotation);
+  ctx = _saveCtx;
+  _rearOCTex.source.update();
+}
+
 // ── WORLD LAYER (Phases 6+7+8, slimmed in the perf overhaul) ─────────────────
-// All planet geometry rendered to one OffscreenCanvas → one PixiJS sprite.
-// Sky, sun, birds, and water glints moved to their own layers (they animate
-// every frame and were forcing constant repaints here). What's left only
-// changes when the planet rotates, halo shapes drift, or tile colors evolve —
-// so the canvas repaints on demand instead of on a fixed clock:
-//   - rotation moved ≥0.5px at the surface  → repaint (every frame while spinning)
-//   - halo wave amplitudes drifted ≥1.5px   → repaint (their slow "breathing")
-//   - heartbeat                              → repaint at 150ms (~7Hz) as a
+// Tiles and everything that rotates rigidly with the planet, rendered to one
+// OffscreenCanvas → one PixiJS sprite. Sky, sun, birds, water glints, and the
+// rear stack (halos/rings) live on their own layers, so this canvas repaints
+// only when:
+//   - rotation moved ≥0.5px at the surface → repaint (every frame while spinning)
+//   - heartbeat                            → repaint at 150ms (~7Hz) as a
 //     catch-all for slow changes: tile color drift, sliders, tile type flips.
 //     Drops to 66ms while a ruby glint is fading so the fade stays smooth.
 let _planetOC = null, _planetOCCtx = null, _planetOCTex = null, _planetOCSprite = null;
 let _planetLastRot = -999;        // rotation at last repaint
 let _worldLastPaintMs = -1e9;     // lastTime at last repaint
-const _worldAmpsAtPaint = [0, 0, 0, 0, 0, 0]; // halo amplitudes at last repaint
-const _worldRotsAtPaint = [9, 9, 9, 9, 9];    // halo/ring rotations at last repaint
 
 function _rubyGlintActive() {
   for (const it of groundItems)
@@ -5316,49 +5417,19 @@ function _drawPlanetLayer() {
     _planetOCCtx    = _planetOC.getContext('2d');
     _planetOCTex    = PIXI.Texture.from(_planetOC);
     _planetOCSprite = new PIXI.Sprite(_planetOCTex);
-    window.pixiPlanet.addChildAt(_planetOCSprite, 0);
+    // Directly above the rear stack (which is created first each frame)
+    window.pixiPlanet.addChildAt(_planetOCSprite, _rearOCSprite ? 1 : 0);
     _planetGrad = null; // force cached gradient to re-create on the new context
   }
-  // Planet rotation gets an immediate repaint (the surface must track the
-  // player's finger). Halos and green rings ease/drift on their own (parallax
-  // smoothing, wind momentum) and can keep moving for a long time after a spin
-  // — they're translucent atmosphere, so cap their repaints at 20Hz (50ms),
-  // which matches the old fixed refresh rate.
-  const moveEps    = 0.5 / R; // ≥0.5 screen-px of movement at the surface
-  const sincePaint = lastTime - _worldLastPaintMs;
-  const auxMoved   = Math.abs(haloRotation  - _worldRotsAtPaint[0]) >= moveEps
-                  || Math.abs(halo2Rotation - _worldRotsAtPaint[1]) >= moveEps
-                  || Math.abs(halo3Rotation - _worldRotsAtPaint[2]) >= moveEps
-                  || Math.abs(assetRotation - _worldRotsAtPaint[3]) >= moveEps
-                  || Math.abs(rearRotation  - _worldRotsAtPaint[4]) >= moveEps;
-  const rotMoved = Math.abs(rotation - _planetLastRot) >= moveEps
-                || (auxMoved && sincePaint >= 50);
-  let ampDrift = Math.abs(hWaveAmp   - _worldAmpsAtPaint[0])
-               + Math.abs(hcWaveAmp  - _worldAmpsAtPaint[1])
-               + Math.abs(h2WaveAmp  - _worldAmpsAtPaint[2])
-               + Math.abs(h2cWaveAmp - _worldAmpsAtPaint[3])
-               + Math.abs(h3WaveAmp  - _worldAmpsAtPaint[4])
-               + Math.abs(h3cWaveAmp - _worldAmpsAtPaint[5]);
+  const rotMoved    = Math.abs(rotation - _planetLastRot) >= 0.5 / R;
   const heartbeatMs = _rubyGlintActive() ? 66 : 150;
-  const heartbeat   = sincePaint >= heartbeatMs;
-  if (!needsResize && !rotMoved && ampDrift < 1.5 && !heartbeat) return;
+  const heartbeat   = lastTime - _worldLastPaintMs >= heartbeatMs;
+  if (!needsResize && !rotMoved && !heartbeat) return;
   _planetLastRot    = rotation;
   _worldLastPaintMs = lastTime;
-  _worldAmpsAtPaint[0] = hWaveAmp;  _worldAmpsAtPaint[1] = hcWaveAmp;
-  _worldAmpsAtPaint[2] = h2WaveAmp; _worldAmpsAtPaint[3] = h2cWaveAmp;
-  _worldAmpsAtPaint[4] = h3WaveAmp; _worldAmpsAtPaint[5] = h3cWaveAmp;
-  _worldRotsAtPaint[0] = haloRotation;  _worldRotsAtPaint[1] = halo2Rotation;
-  _worldRotsAtPaint[2] = halo3Rotation; _worldRotsAtPaint[3] = assetRotation;
-  _worldRotsAtPaint[4] = rearRotation;
   const _saveCtx = ctx;
   ctx = _planetOCCtx;
   ctx.clearRect(0, 0, W, H);
-  drawHalo(haloRotation);
-  drawPlanetBody();
-  drawGreenRingRear();
-  drawHalo2(halo2Rotation);
-  drawGreenRing();
-  drawHalo3(halo3Rotation);
   drawTiles();
   drawPlanetCover();
   drawDarkHalo2();
@@ -5610,6 +5681,7 @@ function loop(time) {
   requestAnimationFrame(loop);
   tickFps(time);
   _loopFrame = (_loopFrame + 1) | 0;
+  _flushTexGraveyard(); // destroy parked textures once no sprite can reference them
   const dt = Math.min(time - lastTime, 50);
   lastTime = time;
   _updatePlayMode(dt);
@@ -5731,7 +5803,8 @@ function loop(time) {
   }
   // Draw order — each layer paints on top of the previous one:
   _drawSkySunBirds();      // sky (static sprite) + animated sun + birds (PixiJS background)
-  _drawPlanetLayer();      // planet geometry → single PixiJS sprite, repaints on demand
+  _drawRearLayer();        // halos + planet body + green rings, repaints when they move
+  _drawPlanetLayer();      // tiles + planet surface → single PixiJS sprite, repaints on demand
   drawWaterGlints();       // shimmering water sparkles (PixiJS waterContainer)
   drawGrassBlades();      // individual grass blades + creature (on the separate grass canvas)
   drawTileNumbers();      // debug water/tile numbers (shown when "Show #" is on)
