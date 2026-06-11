@@ -421,7 +421,7 @@ const NATIVE_W = 1920, NATIVE_H = 920;
 let W = NATIVE_W, H = NATIVE_H, R, CX, CY, currentDpr = 1;
 let rockCanvas = null, crustDotCanvas = null, coverSpotsCanvas = null;
 let lastR = null;
-let _skyGrad = null, _sunBloom = null, _sunGrad = null, _planetGrad = null;
+let _skyGrad = null, _planetGrad = null;
 const game = document.getElementById('game');
 function layout() {
   const vw = window.innerWidth;
@@ -463,7 +463,7 @@ function layout() {
   }
   lastR = R;
   if (rockCanvas) { bakeRockCanvas(); bakeCrustDotCanvas(); bakeCoverSpotsCanvas(); }
-  _skyGrad = null; _sunBloom = null; _sunGrad = null; _planetGrad = null;
+  _skyGrad = null; _planetGrad = null;
 }
 let resizeTimer;
 const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(layout, 120); };
@@ -1396,11 +1396,10 @@ function _updatePixiCreature() {
   // 4. Horizontal flip
   _cFlipC.scale.x = creatureFlip ? -1 : 1;
 
-  // 5. Body texture (main image or current leg-animation frame)
-  const bodyImg = (creatureLegReady && creatureLegImgs[creatureLegIdx].complete && creatureLegImgs[creatureLegIdx].naturalWidth)
-    ? creatureLegImgs[creatureLegIdx] : creatureImg;
-  const bodyTex = _texFromImg(bodyImg, CREATURE_DISPLAY_W, CREATURE_DISPLAY_H);
-  if (bodyTex) _cBodyS.texture = bodyTex;
+  // 5. Body texture — current pose from the frame cache (base image until the
+  // first pose finishes baking)
+  const bodyTex = _c1FrameTex || _texFromImg(creatureImg, CREATURE_DISPLAY_W, CREATURE_DISPLAY_H);
+  if (bodyTex && _cBodyS.texture !== bodyTex) _cBodyS.texture = bodyTex;
 
   // 6. Blink overlay
   if (blinkState > 0) {
@@ -1490,10 +1489,8 @@ function _updatePixiCreature2() {
   _c2WiggleC.rotation = wiggle;
   _c2FlipC.scale.x = creature2Flip ? -1 : 1;
 
-  const bodyImg = (c2LegReady && c2LegImgs[c2LegIdx].complete && c2LegImgs[c2LegIdx].naturalWidth)
-    ? c2LegImgs[c2LegIdx] : c2Img;
-  const bodyTex = _texFromImg(bodyImg, CREATURE2_DISPLAY_W, CREATURE2_DISPLAY_H);
-  if (bodyTex) _c2BodyS.texture = bodyTex;
+  const bodyTex = _c2FrameTex || _texFromImg(c2Img, CREATURE2_DISPLAY_W, CREATURE2_DISPLAY_H);
+  if (bodyTex && _c2BodyS.texture !== bodyTex) _c2BodyS.texture = bodyTex;
 }
 
 function updateGrassSway(dtSec) {
@@ -1716,21 +1713,22 @@ function updateBirds(dt, dHaloRot) {
     if ((b.vAngle > 0 && sx > W+50) || (b.vAngle < 0 && sx < -50)) birds.splice(k, 1);
   }
 }
-function drawBirds() {
+// Birds render as PIXI.Graphics strokes (see _drawSkySunBirds) — two quadratic
+// curves per bird, redrawn every frame so wings flap at full framerate.
+function _drawBirdsPixi() {
+  const g = _birdsGfx;
+  g.clear();
+  if (!birds.length) return;
   const t = lastTime * 0.001;
-  ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineCap = 'round';
   for (const b of birds) {
     const sx = CX + Math.sin(b.angle) * b.radius;
     const sy = CY - Math.cos(b.angle) * b.radius;
     const fy = Math.sin(t*5.5 + b.wing) * b.size * 0.42;
-    ctx.lineWidth = 1.1 + b.size * 0.07;
-    ctx.beginPath();
-    ctx.moveTo(sx - b.size, sy + fy);
-    ctx.quadraticCurveTo(sx - b.size*0.5, sy, sx, sy);
-    ctx.quadraticCurveTo(sx + b.size*0.5, sy, sx + b.size, sy + fy);
-    ctx.stroke();
+    g.moveTo(sx - b.size, sy + fy)
+     .quadraticCurveTo(sx - b.size*0.5, sy, sx, sy)
+     .quadraticCurveTo(sx + b.size*0.5, sy, sx + b.size, sy + fy)
+     .stroke({ width: 1.1 + b.size * 0.07, color: 0xffffff, alpha: 0.5, cap: 'round' });
   }
-  ctx.restore();
 }
 
 // ── BUTTERFLIES ───────────────────────────────────────────────────────────────
@@ -2358,14 +2356,22 @@ const waterGlints = Array.from({length: TILE_COUNT}, () =>
   }))
 );
 
+// Water glints render as pooled PIXI.Sprites in waterContainer — they shimmer
+// continuously, so keeping them out of the world canvas lets it skip repaints
+// while the planet is still. (They also now sparkle at full framerate.)
+let _glintTex = null;
+const _glintPool = [];
 function drawWaterGlints() {
+  if (!window.pixiWater) return;
+  if (!_glintTex) {
+    const oc = new OffscreenCanvas(16, 16);
+    const c  = oc.getContext('2d');
+    c.fillStyle = '#ffffff';
+    c.beginPath(); c.arc(8, 8, 7, 0, Math.PI * 2); c.fill();
+    _glintTex = PIXI.Texture.from(oc);
+  }
   const visCenter = ((Math.round(-rotation / (Math.PI * 2) * TILE_COUNT)) % TILE_COUNT + TILE_COUNT) % TILE_COUNT;
-  ctx.save();
-  ctx.beginPath();
-  _ringPath(R + SURF_R + CAP_H, _wWave);
-  ctx.clip();
-
-  ctx.fillStyle = '#ffffff';
+  let n = 0;
   for (let di = -18; di <= 18; di++) {
     const i    = (visCenter + di + TILE_COUNT) % TILE_COUNT;
     const tile = tiles[i];
@@ -2385,17 +2391,28 @@ function drawWaterGlints() {
       if (gx < -20 || gx > W + 20) continue;
 
       const shimmer = Math.max(0, Math.sin(frameNow * 0.0028 + g.phase2));
-      const alpha   = shimmer * shimmer * 0.9;
+      let alpha     = shimmer * shimmer * 0.9;
+      // Replaces the old Canvas2D clip to the wavy cap surface: fade out any
+      // glint poking above it (only reachable when the CapH slider is set low)
+      const over = g.radOff + bob + g.size - CAP_H * 0.5;
+      if (over > 0) alpha *= Math.max(0, 1 - over / 3);
       if (alpha < 0.02) continue;
 
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      ctx.arc(gx, gy, g.size, 0, Math.PI * 2);
-      ctx.fill();
+      let s = _glintPool[n];
+      if (!s) {
+        s = new PIXI.Sprite(_glintTex);
+        s.anchor.set(0.5);
+        window.pixiWater.addChild(s);
+        _glintPool[n] = s;
+      }
+      n++;
+      s.position.set(gx, gy);
+      s.scale.set(g.size / 7); // baked circle radius = 7px
+      s.alpha   = alpha;
+      s.visible = true;
     }
   }
-  ctx.globalAlpha = 1;
-  ctx.restore();
+  for (let k = n; k < _glintPool.length; k++) _glintPool[k].visible = false;
 }
 
 function drawEvaporation() {
@@ -2552,16 +2569,18 @@ function _bakePuffTexture() {
 }
 
 // Returns a texture of the white puff with its shadow disc (clipped to the puff
-// shape) at the given puff-local offset. Cached per 4-px-quantised offset.
-function _getPuffShadowTex(shdX, shdY) {
-  const qx  = Math.round(shdX / 4) * 4;
-  const qy  = Math.round(shdY / 4) * 4;
+// shape) at the given CELL-quantised puff-local offset (qx/qy are already
+// multiples of the 4px grid — see drawClouds, which blends the 4 neighbouring
+// cells so the shadow glides instead of stepping).
+function _getPuffShadowTex(qx, qy) {
   const key = qx + ',' + qy;
   let tex = _puffShadowTexCache.get(key);
   if (tex) return tex;
-  // Safety valve: offsets are bounded so this should rarely trip, but if sliders
-  // push the cache big, drop everything and let textures re-bake as needed.
-  if (_puffShadowTexCache.size >= 160) {
+  // Safety valve. The full reachable offset set is ~300 cells (sun shift ×
+  // vertical band), so 400 never trips in normal play — slider changes go
+  // through _invalidatePuffTexture instead. If it does trip, everything
+  // re-bakes lazily within a frame.
+  if (_puffShadowTexCache.size >= 400) {
     for (const t of _puffShadowTexCache.values()) t.destroy(true);
     _puffShadowTexCache.clear();
   }
@@ -2598,10 +2617,18 @@ function _addCloudPixi(cloud) {
   const container = new PIXI.Container();
   window.pixiClouds.addChild(container);
   const puffItems = cloud.puffs.map(() => {
-    // One sprite per puff — puff + shadow live in the same baked texture.
-    // pivot = puff centre, so rotation/scale happen around the middle.
+    // Base sprite (puff + shadow baked together) + 3 overlay children showing
+    // the neighbouring shadow-offset cells. drawClouds alpha-weights the
+    // overlays so the shadow glides smoothly between the 4px texture grid
+    // instead of popping cell to cell. Children inherit the base transform,
+    // and plain sprites keep the whole cloud layer batched (no masks).
     const sprite = new PIXI.Sprite(_puffTex);
     sprite.pivot.set(_PUFF_CX, _PUFF_CY);
+    for (let k = 0; k < 3; k++) {
+      const o = new PIXI.Sprite(_puffTex);
+      o.alpha = 0;
+      sprite.addChild(o);
+    }
     container.addChild(sprite);
     return sprite;
   });
@@ -2655,13 +2682,31 @@ function drawClouds() {
 
       // Sun-based shadow shift: shadow moves away from sun as cloud crosses the sky.
       // sunShift is in puff-local units (PUFF_UNIT = 1 puff radius), projected into
-      // the sprite's rotated frame so "horizontal in world" maps correctly. The
-      // offset picks which baked puff+shadow texture this puff uses this frame.
+      // the sprite's rotated frame so "horizontal in world" maps correctly.
       const sunShift = (px - CX) / CX * PUFF_UNIT * CLOUD_SHD_SUN;
       const shdX = sunShift * Math.cos(puffAngle);
       const shdY = -sunShift * Math.sin(puffAngle) + PUFF_UNIT * CLOUD_SHD_OFFSET;
-      const tex  = _getPuffShadowTex(shdX, shdY);
-      if (sprite.texture !== tex) sprite.texture = tex;
+      // The shadow textures are baked on a 4px offset grid. Blend the 4
+      // neighbouring cells (base + 3 alpha-weighted overlays) so the shadow
+      // glides between cells instead of popping. The alphas below make the
+      // stacked over-compositing come out as exact bilinear weights — valid
+      // because all 4 textures are identical except for the shadow position.
+      const fx = shdX / 4, fy = shdY / 4;
+      const cx0 = Math.floor(fx), cy0 = Math.floor(fy);
+      const ftx = fx - cx0, fty = fy - cy0; // fractional position inside the cell
+      const x0 = cx0 * 4, y0 = cy0 * 4;
+      const t00 = _getPuffShadowTex(x0,     y0);
+      const t10 = _getPuffShadowTex(x0 + 4, y0);
+      const t01 = _getPuffShadowTex(x0,     y0 + 4);
+      const t11 = _getPuffShadowTex(x0 + 4, y0 + 4);
+      if (sprite.texture !== t00) sprite.texture = t00;
+      const o10 = sprite.children[0], o01 = sprite.children[1], o11 = sprite.children[2];
+      if (o10.texture !== t10) o10.texture = t10;
+      if (o01.texture !== t01) o01.texture = t01;
+      if (o11.texture !== t11) o11.texture = t11;
+      o10.alpha = ftx;
+      o01.alpha = ((1 - ftx) * fty) / (1 - ftx * fty);
+      o11.alpha = ftx * fty;
     }
   }
 }
@@ -2677,18 +2722,64 @@ function drawSky() {
   ctx.fillStyle = _skyGrad; ctx.fillRect(0, 0, W, H);
 }
 
-function drawSun() {
-  const cx = CX, cy = SUN_CY, r = SUN_R;
+// ── SKY + SUN + BIRDS LAYERS ─────────────────────────────────────────────────
+// These used to be painted into the world OffscreenCanvas every repaint. They're
+// the always-animating parts (corona spin, wing flaps), which forced the whole
+// world canvas to repaint even when the planet sat still. Now:
+//   skySprite  — sky gradient + sun bloom, baked once, redone only on resize
+//   sunSprite  — small (~480px) canvas with just the corona + sun body, every frame
+//   birdsGfx   — PIXI.Graphics strokes, every frame
+// Bonus: sun and birds now animate at full framerate instead of the world
+// layer's repaint rate.
+let _skySprite = null, _skyTex = null, _skyOC = null, _skyW = 0, _skyH = 0;
+const SUN_LAYER_R = Math.ceil(SUN_R * 2.2); // covers corona max radius (~1.9×R) + drift
+let _sunSprite = null, _sunTex = null, _sunOC = null, _sunCtx = null, _sunGradLocal = null;
+let _birdsGfx = null;
 
-  // Outer bloom
-  if (!_sunBloom) {
-    _sunBloom = ctx.createRadialGradient(cx, cy, r*0.5, cx, cy, r*5);
-    _sunBloom.addColorStop(0,    'rgba(255,245,100,0.50)');
-    _sunBloom.addColorStop(0.3,  'rgba(255,180,30,0.20)');
-    _sunBloom.addColorStop(0.65, 'rgba(220,80,0,0.07)');
-    _sunBloom.addColorStop(1,    'rgba(180,20,0,0)');
+function _drawSkySunBirds() {
+  if (!window.pixiBG) return;
+
+  // ── Sky: static, rebaked only when the canvas size changes ────────────────
+  if (!_skySprite || _skyW !== W || _skyH !== H) {
+    if (_skySprite) { _skySprite.destroy(); _skyTex.destroy(true); }
+    _skyW = W; _skyH = H;
+    _skyOC = new OffscreenCanvas(W, H);
+    const _save = ctx;
+    ctx = _skyOC.getContext('2d');
+    _skyGrad = null;       // force gradient re-create on this context
+    drawSky();
+    // Sun bloom is static too — bake it into the sky so the animated sun layer stays small
+    const bloom = ctx.createRadialGradient(CX, SUN_CY, SUN_R * 0.5, CX, SUN_CY, SUN_R * 5);
+    bloom.addColorStop(0,    'rgba(255,245,100,0.50)');
+    bloom.addColorStop(0.3,  'rgba(255,180,30,0.20)');
+    bloom.addColorStop(0.65, 'rgba(220,80,0,0.07)');
+    bloom.addColorStop(1,    'rgba(180,20,0,0)');
+    ctx.fillStyle = bloom; ctx.beginPath(); ctx.arc(CX, SUN_CY, SUN_R * 5, 0, Math.PI * 2); ctx.fill();
+    ctx = _save;
+    _skyGrad = null;       // don't leak a gradient bound to the bake context
+    _skyTex    = PIXI.Texture.from(_skyOC);
+    _skySprite = new PIXI.Sprite(_skyTex);
+    window.pixiBG.addChildAt(_skySprite, 0);
   }
-  ctx.fillStyle = _sunBloom; ctx.beginPath(); ctx.arc(cx, cy, r*5, 0, Math.PI*2); ctx.fill();
+
+  // ── Sun corona + body: small canvas, animated every frame ─────────────────
+  if (!_sunSprite) {
+    _sunOC     = new OffscreenCanvas(SUN_LAYER_R * 2, SUN_LAYER_R * 2);
+    _sunCtx    = _sunOC.getContext('2d');
+    _sunTex    = PIXI.Texture.from(_sunOC);
+    _sunSprite = new PIXI.Sprite(_sunTex);
+    window.pixiBG.addChild(_sunSprite);
+    _birdsGfx  = new PIXI.Graphics();
+    window.pixiBG.addChild(_birdsGfx);
+  }
+  _sunSprite.position.set(CX - SUN_LAYER_R, SUN_CY - SUN_LAYER_R);
+  _drawSunLayer();
+  _drawBirdsPixi();
+}
+
+function _drawSunLayer() {
+  const c = _sunCtx, cx = SUN_LAYER_R, cy = SUN_LAYER_R, r = SUN_R;
+  c.clearRect(0, 0, SUN_LAYER_R * 2, SUN_LAYER_R * 2);
 
   // 4 spinning corona circles — randomized size/phase/speed on load
   const ot = lastTime * 0.00034; // rotation speed
@@ -2700,26 +2791,23 @@ function drawSun() {
     const offY  = Math.sin(a) * r * 0.11;
     // slow size pulse — each ring has its own offset so they don't all pulse together
     const pulse = 1 + 0.06 * Math.sin(lastTime * 0.00055 + cr.phase);
-    ctx.save();
-    ctx.translate(cx + offX, cy + offY);
-    ctx.rotate(a);
-    ctx.beginPath();
-    ctx.arc(0, 0, r * cr.r * pulse, 0, Math.PI * 2);
-    ctx.fillStyle = cr.color;
-    ctx.fill();
-    ctx.restore();
+    c.beginPath();
+    c.arc(cx + offX, cy + offY, r * cr.r * pulse, 0, Math.PI * 2);
+    c.fillStyle = cr.color;
+    c.fill();
   }
 
   // Sun body: white center → majority yellow → thin orange-yellow rim
-  if (!_sunGrad) {
-    _sunGrad = ctx.createRadialGradient(cx - r*0.28, cy - r*0.28, r*0.06, cx, cy, r);
-    _sunGrad.addColorStop(0,    '#ffffff');
-    _sunGrad.addColorStop(0.38, '#fffbe8');
-    _sunGrad.addColorStop(0.70, '#ffe030');
-    _sunGrad.addColorStop(0.93, '#ffb300');
-    _sunGrad.addColorStop(1,    '#ff8800');
+  if (!_sunGradLocal) {
+    _sunGradLocal = c.createRadialGradient(cx - r*0.28, cy - r*0.28, r*0.06, cx, cy, r);
+    _sunGradLocal.addColorStop(0,    '#ffffff');
+    _sunGradLocal.addColorStop(0.38, '#fffbe8');
+    _sunGradLocal.addColorStop(0.70, '#ffe030');
+    _sunGradLocal.addColorStop(0.93, '#ffb300');
+    _sunGradLocal.addColorStop(1,    '#ff8800');
   }
-  ctx.fillStyle = _sunGrad; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  c.fillStyle = _sunGradLocal; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI*2); c.fill();
+  _sunTex.source.update();
 }
 
 function drawPlanetBody() {
@@ -3478,50 +3566,85 @@ function loadCreatureVariant(def) {
   const svg = buildCreatureSVG(def);
   creatureSvgText = svg;
   creatureImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  creatureLegReady = false;
+  // New look → every cached pose is stale
+  _frameCacheReset(_c1FrameCache);
+  _c1FrameTex = null;
 }
 
-function bakeCreatureLegFrame(a1, a2) {
-  if (!creatureSvgText) return;
-  // a1/a2 in degrees; pair1 = BackFrontLeg + FrontInsetLeg, pair2 = FrontTopLeg + BackInsetLeg
-  const angles = { BackFrontLeg: a1, FrontTopLeg: a2, BackInsetLeg: -a1, FrontInsetLeg: -a2, Tail: tailAngle };
+// ── CREATURE POSE TEXTURE CACHE ───────────────────────────────────────────────
+// Every leg/tail pose is baked into a texture ONCE and reused. The old pipeline
+// re-built and re-rasterized the entire creature SVG up to ~30×/sec per walking
+// creature (a major frame cost), and the async loads made the gait stutter.
+// Both swinging leg pairs are driven by one angle (a2 is always −a1), so a pose
+// is fully described by: leg angle (1° steps) + tail angle (5° steps) + blink
+// state (creature 2 only). A walk cycle repeats the same ~25 poses, so after
+// one cycle everything is a cache hit — zero SVG work per frame.
+const _c1FrameCache = new Map(); // "qa|qtail"       → PIXI.Texture
+const _c2FrameCache = new Map(); // "qa|qtail|blink" → PIXI.Texture
+let _c1FrameTex = null, _c2FrameTex = null; // texture currently displayed
+let _c1Baking = false, _c2Baking = false;   // one bake in flight per creature
+
+function _frameCacheReset(cache) {
+  for (const t of cache.values()) t.destroy(true);
+  cache.clear();
+}
+
+// Rasterizes an SVG string at (w,h) and caches the texture under `key`.
+// `done(tex)` runs once the texture is ready.
+function _bakePoseTexture(svg, w, h, cache, key, done) {
+  const img = new Image();
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  img.onload = () => {
+    const oc = new OffscreenCanvas(Math.round(w), Math.round(h));
+    oc.getContext('2d').drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const tex = PIXI.Texture.from(oc);
+    cache.set(key, tex);
+    done(tex);
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
+}
+
+function _requestC1Frame(qa, qtail) {
+  const key = qa + '|' + qtail;
+  const hit = _c1FrameCache.get(key);
+  if (hit) { _c1FrameTex = hit; return; }
+  if (_c1Baking || !creatureSvgText) return; // busy — caller re-requests next frame
+  if (_c1FrameCache.size >= 256) _frameCacheReset(_c1FrameCache);
+  _c1Baking = true;
+  // pair1 = BackFrontLeg + FrontInsetLeg swings with qa, pair2 opposite
+  const angles = { BackFrontLeg: qa, FrontTopLeg: -qa, BackInsetLeg: -qa, FrontInsetLeg: qa, Tail: qtail };
   let svg = creatureSvgText;
   for (const [id, a] of Object.entries(angles)) {
     const [cx, cy] = LEG_PIVOTS[id];
-    svg = svg.replace(`id="${id}"`, `id="${id}" transform="rotate(${a.toFixed(1)},${cx},${cy})"`);
+    svg = svg.replace(`id="${id}"`, `id="${id}" transform="rotate(${a},${cx},${cy})"`);
   }
-  const img = creatureLegImgs[creatureLegNext];
-  img.onload = () => {
-    creatureLegIdx   = creatureLegNext;
-    creatureLegNext  = 1 - creatureLegNext;
-    creatureLegReady = true;
-  };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  _bakePoseTexture(svg, CREATURE_DISPLAY_W, CREATURE_DISPLAY_H, _c1FrameCache, key, tex => {
+    _c1FrameTex = tex; // show it — even if the pose moved on, next frame's request catches up
+    _c1Baking = false;
+  });
 }
 
-function bakeCreature2Frame(a1, a2) {
-  if (!c2SvgText) return;
-  const angles = { BackFrontLeg: a1, FrontTopLeg: a2, BackInsetLeg: -a1, FrontBackLeg: -a2, tail: c2TailAngle };
+function _requestC2Frame(qa, qtail, blink) {
+  const key = qa + '|' + qtail + '|' + blink;
+  const hit = _c2FrameCache.get(key);
+  if (hit) { _c2FrameTex = hit; return; }
+  if (_c2Baking || !c2SvgText) return;
+  if (_c2FrameCache.size >= 256) _frameCacheReset(_c2FrameCache);
+  _c2Baking = true;
+  const angles = { BackFrontLeg: qa, FrontTopLeg: -qa, BackInsetLeg: -qa, FrontBackLeg: qa, tail: qtail };
   let svg = c2SvgText;
   for (const [id, a] of Object.entries(angles)) {
     const piv = LEG2_PIVOTS[id];
-    if (piv) svg = svg.replace(`id="${id}"`, `id="${id}" transform="rotate(${a.toFixed(1)},${piv[0]},${piv[1]})"`);
+    if (piv) svg = svg.replace(`id="${id}"`, `id="${id}" transform="rotate(${a},${piv[0]},${piv[1]})"`);
   }
-  if (c2BlinkState === 1 || c2BlinkState === 3) {
-    svg = svg.replace('id="EyesHalfClosed" display="none"', 'id="EyesHalfClosed"');
-  } else if (c2BlinkState === 2) {
-    svg = svg.replace('id="EyesClosed" display="none"', 'id="EyesClosed"');
-  }
-  const img = c2LegImgs[c2LegNext];
-  // Revoke the OLD url for this slot now — it has been drawn at least one frame ago, safe to release
-  if (img._blobUrl) { URL.revokeObjectURL(img._blobUrl); img._blobUrl = null; }
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-  img._blobUrl = url; // deferred revocation: released at start of next bake for this slot
-  img.onload = () => {
-    c2LegIdx = c2LegNext; c2LegNext = 1 - c2LegNext; c2LegReady = true;
-    // url intentionally NOT revoked here — _texFromImg still needs the image data next frame
-  };
-  img.src = url;
+  if (blink === 1) svg = svg.replace('id="EyesHalfClosed" display="none"', 'id="EyesHalfClosed"');
+  else if (blink === 2) svg = svg.replace('id="EyesClosed" display="none"', 'id="EyesClosed"');
+  _bakePoseTexture(svg, CREATURE2_DISPLAY_W, CREATURE2_DISPLAY_H, _c2FrameCache, key, tex => {
+    _c2FrameTex = tex;
+    _c2Baking = false;
+  });
 }
 
 // Pre-bake all rocks to an offscreen canvas. Called once at startup and again on orientation change.
@@ -4889,7 +5012,7 @@ const c2Img = new Image();
 c2Img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(c2SvgText);
 let c2LegImgs = [new Image(), new Image()];
 let c2LegIdx = 0, c2LegNext = 1, c2LegReady = false;
-let c2LastA1 = 0, c2LastA2 = 0, c2LastTail = 0, c2Swing = 0;
+let c2Swing = 0;
 let c2BlinkState = 0, c2BlinkTimer = 3000 + Math.random() * 4000;
 let c2TailAngle = 0, c2TailWagging = false;
 let c2TailWagPhase = 0, c2TailWagTimer = 5000 + Math.random() * 5000, c2TailWagDur = 0;
@@ -4901,9 +5024,6 @@ let creatureMoving      = false;
 let creatureActionTimer = 0;   // seconds until next state change
 let creatureFlip        = false;
 let creatureInited      = false;
-let creatureLastA1      = 0;
-let creatureLastA2      = 0;
-let creatureLastTail    = 0;
 let creatureSwing       = 0;  // smoothly lerped toward target swing (0 or 12)
 
 function setCreatureFlip(flipped) {
@@ -4965,18 +5085,12 @@ function updateCreature(dtSec) {
     if (tailWagPhase > tailWagDur) { tailWagging = false; tailAngle = 0; tailWagTimer = 5000 + Math.random() * 5000; }
   }
 
-  // Bake next leg frame (double-buffer; displayed image lags by 1 frame)
+  // Pick the cached texture for the current pose (legs 1° steps, tail 5° steps)
   const legPhase = frameNow * 0.005;
   const swingTarget = creatureMoving ? 12 : 0;
   creatureSwing += (swingTarget - creatureSwing) * Math.min(1, dtSec * 8);
-  const swing = creatureSwing;
-  const a1 = Math.sin(legPhase)            * swing;
-  const a2 = Math.sin(legPhase + Math.PI)  * swing;
-  // Only re-bake when angles shift by >0.5 degrees to avoid thrashing
-  if (Math.abs(a1 - (creatureLastA1 || 0)) > 0.5 || Math.abs(a2 - (creatureLastA2 || 0)) > 0.5 || Math.abs(tailAngle - creatureLastTail) > 4) {
-    creatureLastA1 = a1; creatureLastA2 = a2; creatureLastTail = tailAngle;
-    bakeCreatureLegFrame(a1, a2);
-  }
+  _requestC1Frame(Math.round(Math.sin(legPhase) * creatureSwing),
+                  Math.round(tailAngle / 5) * 5);
 
   // Blink state machine: 0=open, 1=half-down, 2=closed, 3=half-up
   if (creatureBounceTimer > 0) creatureBounceTimer = Math.max(0, creatureBounceTimer - dtSec);
@@ -5060,16 +5174,6 @@ function updateCreature2(dtSec) {
     if (c2TailWagPhase > c2TailWagDur) { c2TailWagging = false; c2TailAngle = 0; c2TailWagTimer = 5000 + Math.random() * 5000; }
   }
 
-  const legPhase = frameNow * 0.005;
-  const swingTarget = creature2Moving ? 12 : 0;
-  c2Swing += (swingTarget - c2Swing) * Math.min(1, dtSec * 8);
-  const a1 = Math.sin(legPhase) * c2Swing;
-  const a2 = Math.sin(legPhase + Math.PI) * c2Swing;
-  if (Math.abs(a1 - c2LastA1) > 0.5 || Math.abs(a2 - c2LastA2) > 0.5 || Math.abs(c2TailAngle - c2LastTail) > 4) {
-    c2LastA1 = a1; c2LastA2 = a2; c2LastTail = c2TailAngle;
-    bakeCreature2Frame(a1, a2);
-  }
-
   if (creature2BounceTimer > 0) creature2BounceTimer = Math.max(0, creature2BounceTimer - dtSec);
   c2BlinkTimer -= dtSec * 1000;
   if (c2BlinkTimer <= 0) {
@@ -5078,8 +5182,16 @@ function updateCreature2(dtSec) {
     else if (c2BlinkState === 1) c2BlinkTimer = 80;
     else if (c2BlinkState === 2) c2BlinkTimer = 60;
     else                         c2BlinkTimer = 80;
-    bakeCreature2Frame(c2LastA1, c2LastA2);
   }
+
+  // Pick the cached texture for the current pose (legs/tail/blink — half-open
+  // and half-closing eyes share the same baked frame)
+  const legPhase = frameNow * 0.005;
+  const swingTarget = creature2Moving ? 12 : 0;
+  c2Swing += (swingTarget - c2Swing) * Math.min(1, dtSec * 8);
+  const blinkKey = c2BlinkState === 2 ? 2 : (c2BlinkState === 0 ? 0 : 1);
+  _requestC2Frame(Math.round(Math.sin(legPhase) * c2Swing),
+                  Math.round(c2TailAngle / 5) * 5, blinkKey);
 
   if (creature2Moving) {
     const aheadPos = creature2Pos + creature2Dir * 1.5;
@@ -5171,12 +5283,29 @@ function _rebuildWaveTables() {
 // Ensure tables are populated before the first draw
 _rebuildWaveTables();
 
-// ── WORLD LAYER (Phases 6+7+8) ───────────────────────────────────────────────
-// Sky, sun, birds, and all planet geometry rendered to one OffscreenCanvas →
-// one PixiJS sprite. Single opaque texture = no alpha-compositing seam between
-// two sprites (which caused the faint diagonal line).
+// ── WORLD LAYER (Phases 6+7+8, slimmed in the perf overhaul) ─────────────────
+// All planet geometry rendered to one OffscreenCanvas → one PixiJS sprite.
+// Sky, sun, birds, and water glints moved to their own layers (they animate
+// every frame and were forcing constant repaints here). What's left only
+// changes when the planet rotates, halo shapes drift, or tile colors evolve —
+// so the canvas repaints on demand instead of on a fixed clock:
+//   - rotation moved ≥0.5px at the surface  → repaint (every frame while spinning)
+//   - halo wave amplitudes drifted ≥1.5px   → repaint (their slow "breathing")
+//   - heartbeat                              → repaint at 150ms (~7Hz) as a
+//     catch-all for slow changes: tile color drift, sliders, tile type flips.
+//     Drops to 66ms while a ruby glint is fading so the fade stays smooth.
 let _planetOC = null, _planetOCCtx = null, _planetOCTex = null, _planetOCSprite = null;
-let _planetLastRot = -999, _planetLastHaloTick = 0; // position-based redraw tracking
+let _planetLastRot = -999;        // rotation at last repaint
+let _worldLastPaintMs = -1e9;     // lastTime at last repaint
+const _worldAmpsAtPaint = [0, 0, 0, 0, 0, 0]; // halo amplitudes at last repaint
+const _worldRotsAtPaint = [9, 9, 9, 9, 9];    // halo/ring rotations at last repaint
+
+function _rubyGlintActive() {
+  for (const it of groundItems)
+    if (it.type === 'ruby' && (it.glintStart >= 0 || it.glintEnd >= 0)) return true;
+  return false;
+}
+
 function _drawPlanetLayer() {
   if (!window.pixiPlanet) return;
   // Handle resize unconditionally — new canvas must be populated immediately.
@@ -5188,25 +5317,42 @@ function _drawPlanetLayer() {
     _planetOCTex    = PIXI.Texture.from(_planetOC);
     _planetOCSprite = new PIXI.Sprite(_planetOCTex);
     window.pixiPlanet.addChildAt(_planetOCSprite, 0);
-    // Force all cached gradients to re-create on the new context
-    _planetGrad = null;
-    _skyGrad = null; _sunBloom = null; _sunGrad = null;
+    _planetGrad = null; // force cached gradient to re-create on the new context
   }
-  // Skip when nothing has visibly changed: planet hasn't moved ≥0.5 screen-px at
-  // the surface AND halos haven't needed a refresh in the last 3 frames.
-  // This prevents the 60 Hz sub-pixel Canvas2D AA "shake" at very slow rotation
-  // without causing the old 3-frame jump that affected fast rotation.
-  const rotMoved  = Math.abs(rotation - _planetLastRot) >= 0.5 / R;
-  const haloStale = (_loopFrame - _planetLastHaloTick) >= 3;
-  if (!needsResize && !rotMoved && !haloStale) return;
-  _planetLastRot      = rotation;
-  _planetLastHaloTick = _loopFrame;
+  // Planet rotation gets an immediate repaint (the surface must track the
+  // player's finger). Halos and green rings ease/drift on their own (parallax
+  // smoothing, wind momentum) and can keep moving for a long time after a spin
+  // — they're translucent atmosphere, so cap their repaints at 20Hz (50ms),
+  // which matches the old fixed refresh rate.
+  const moveEps    = 0.5 / R; // ≥0.5 screen-px of movement at the surface
+  const sincePaint = lastTime - _worldLastPaintMs;
+  const auxMoved   = Math.abs(haloRotation  - _worldRotsAtPaint[0]) >= moveEps
+                  || Math.abs(halo2Rotation - _worldRotsAtPaint[1]) >= moveEps
+                  || Math.abs(halo3Rotation - _worldRotsAtPaint[2]) >= moveEps
+                  || Math.abs(assetRotation - _worldRotsAtPaint[3]) >= moveEps
+                  || Math.abs(rearRotation  - _worldRotsAtPaint[4]) >= moveEps;
+  const rotMoved = Math.abs(rotation - _planetLastRot) >= moveEps
+                || (auxMoved && sincePaint >= 50);
+  let ampDrift = Math.abs(hWaveAmp   - _worldAmpsAtPaint[0])
+               + Math.abs(hcWaveAmp  - _worldAmpsAtPaint[1])
+               + Math.abs(h2WaveAmp  - _worldAmpsAtPaint[2])
+               + Math.abs(h2cWaveAmp - _worldAmpsAtPaint[3])
+               + Math.abs(h3WaveAmp  - _worldAmpsAtPaint[4])
+               + Math.abs(h3cWaveAmp - _worldAmpsAtPaint[5]);
+  const heartbeatMs = _rubyGlintActive() ? 66 : 150;
+  const heartbeat   = sincePaint >= heartbeatMs;
+  if (!needsResize && !rotMoved && ampDrift < 1.5 && !heartbeat) return;
+  _planetLastRot    = rotation;
+  _worldLastPaintMs = lastTime;
+  _worldAmpsAtPaint[0] = hWaveAmp;  _worldAmpsAtPaint[1] = hcWaveAmp;
+  _worldAmpsAtPaint[2] = h2WaveAmp; _worldAmpsAtPaint[3] = h2cWaveAmp;
+  _worldAmpsAtPaint[4] = h3WaveAmp; _worldAmpsAtPaint[5] = h3cWaveAmp;
+  _worldRotsAtPaint[0] = haloRotation;  _worldRotsAtPaint[1] = halo2Rotation;
+  _worldRotsAtPaint[2] = halo3Rotation; _worldRotsAtPaint[3] = assetRotation;
+  _worldRotsAtPaint[4] = rearRotation;
   const _saveCtx = ctx;
   ctx = _planetOCCtx;
   ctx.clearRect(0, 0, W, H);
-  drawSky();            // opaque sky background — fills canvas so no transparent seams
-  drawSun();
-  drawBirds();
   drawHalo(haloRotation);
   drawPlanetBody();
   drawGreenRingRear();
@@ -5214,7 +5360,6 @@ function _drawPlanetLayer() {
   drawGreenRing();
   drawHalo3(halo3Rotation);
   drawTiles();
-  drawWaterGlints();
   drawPlanetCover();
   drawDarkHalo2();
   drawDarkHalo();
@@ -5585,7 +5730,9 @@ function loop(time) {
     }
   }
   // Draw order — each layer paints on top of the previous one:
-  _drawPlanetLayer();      // sky + sun + birds + planet → single PixiJS sprite
+  _drawSkySunBirds();      // sky (static sprite) + animated sun + birds (PixiJS background)
+  _drawPlanetLayer();      // planet geometry → single PixiJS sprite, repaints on demand
+  drawWaterGlints();       // shimmering water sparkles (PixiJS waterContainer)
   drawGrassBlades();      // individual grass blades + creature (on the separate grass canvas)
   drawTileNumbers();      // debug water/tile numbers (shown when "Show #" is on)
   drawRain();              // falling raindrops (PixiJS weatherContainer)
