@@ -490,6 +490,28 @@ let swayLevel = 0; // 0=neutral 1=slow 2=medium 3=fast
 let heldCloud = null, heldCloudTime = 0;
 const rainParticles = [];
 const splashParticles = [];
+// Sprite pools for rain + splash — baked textures, no per-frame GPU geometry upload
+let _rainTex = null, _splashTex = null;
+const _rainPool   = [];
+const _splashPool = [];
+function _bakeRainTextures() {
+  const oc = new OffscreenCanvas(14, 14);
+  const c  = oc.getContext('2d');
+  const g  = c.createRadialGradient(7, 7, 0, 7, 7, 7);
+  g.addColorStop(0,   'rgba(100,185,245,1)');
+  g.addColorStop(0.5, 'rgba(100,185,245,0.9)');
+  g.addColorStop(1,   'rgba(100,185,245,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 14, 14);
+  _rainTex = PIXI.Texture.from(oc);
+
+  const oc2 = new OffscreenCanvas(12, 12);
+  const c2  = oc2.getContext('2d');
+  const g2  = c2.createRadialGradient(6, 6, 0, 6, 6, 6);
+  g2.addColorStop(0, 'rgba(80,160,220,1)');
+  g2.addColorStop(1, 'rgba(80,160,220,0)');
+  c2.fillStyle = g2; c2.fillRect(0, 0, 12, 12);
+  _splashTex = PIXI.Texture.from(oc2);
+}
 let evapTimer = 0;
 let lastCloudRemoveTime = -Infinity;
 let lastCloudSpawnTime  = -Infinity;
@@ -877,7 +899,7 @@ function _buildSprite(si, hb) {
   const oct  = oc.getContext('2d');
   oct.setTransform(BLADE_SCALE, 0, 0, BLADE_SCALE, SPRITE_PAD, SPRITE_PAD);
   oct.fillStyle   = fill;    oct.fill(bladePaths[si]);
-  oct.strokeStyle = '#172614'; oct.lineWidth = 7.5 * BLADE_SCALE;
+  oct.strokeStyle = '#172614'; oct.lineWidth = 11 * BLADE_SCALE;
   oct.stroke(bladePaths[si]);
   return (_spriteCache[si][hb] = oc);
 }
@@ -1209,19 +1231,14 @@ let lastGrassSway = Infinity;
 const _bladePool  = []; // reused every frame — avoids per-frame GC allocation
 
 function drawGrassBlades() {
-  // Creature animates independently of grass (blink, bounce, rotation) — always update.
   _updatePixiCreature();
-
-  if (!window.pixiBackGrass) return; // PixiJS not ready yet (async init still running)
-
-  // Skip grass sprite update when nothing has moved.
-  // PixiJS keeps rendering the same sprites without any CPU work on our part.
+  _updatePixiCreature2();
+  if (!window.pixiBackGrass) return;
   if (Math.abs(rotation  - lastGrassRot)  < 0.0005 &&
       Math.abs(grassSway - lastGrassSway) < 0.002  &&
       grassWindAmp < 0.008) return;
   lastGrassRot  = rotation;
   lastGrassSway = grassSway;
-
   _updateGrassLayer(BLADE_ROW_OFFSETS.length - 1, 2, _bkSprPool, window.pixiBackGrass);
   _updateGrassLayer(1, 0, _ftSprPool, window.pixiFrontGrass);
 }
@@ -1279,16 +1296,17 @@ function _updateGrassLayer(fromRow, toRow, sprPool, container) {
     container.addChild(s);
     sprPool.push(s);
   }
-  // Assign visible blades to sprites
+  // Assign visible blades to sprites. _bladePool is already depth-sorted and
+  // sprites render in child order, so no zIndex/sortableChildren needed.
   for (let idx = 0; idx < poolLen; idx++) {
     const b = _bladePool[idx];
     const s = sprPool[idx];
-    s.texture = getBladeTexture(b.si, b.hb);
+    const tex = getBladeTexture(b.si, b.hb);
+    if (s.texture !== tex) s.texture = tex; // skip the texture-swap bookkeeping when unchanged
     s.pivot.set(SPRITE_AX[b.si], SPRITE_AY); // blade base = pivot = world position
     s.position.set(b.bx, b.by);
     s.rotation  = b.θ;
     s.scale.set(b.sv);
-    s.zIndex    = b.depth; // sortableChildren=true renders in this order
     s.visible   = true;
   }
   // Hide leftover sprites from a previous frame with more blades
@@ -1348,7 +1366,7 @@ function _updatePixiCreature() {
   // ── Compute screen position ───────────────────────────────────────────────
   const tileAngle   = (creaturePos / TILE_COUNT) * Math.PI * 2;
   const screenAngle = tileAngle + rotation;
-  const surfR       = R + SURF_R + CAP_H + 5 + waveAt(tileAngle);
+  const surfR       = R + SURF_R + CAP_H - 5 + waveAt(tileAngle);
   const tx = CX + Math.sin(screenAngle) * surfR;
   const ty = CY - Math.cos(screenAngle) * surfR;
 
@@ -1426,6 +1444,58 @@ function _updatePixiHearts() {
   }
 }
 
+let _c2Ready = false;
+let _c2PosC, _c2PulseC, _c2WiggleC, _c2FlipC, _c2BodyS;
+
+function _updatePixiCreature2() {
+  if (!window.pixiCreature || !c2SvgText) return;
+
+  if (!_c2Ready) {
+    _c2PosC    = new PIXI.Container();
+    _c2PulseC  = new PIXI.Container();
+    _c2WiggleC = new PIXI.Container();
+    _c2FlipC   = new PIXI.Container();
+    _c2BodyS   = new PIXI.Sprite();
+    const anchorY = (CREATURE2_DISPLAY_H - 40) / CREATURE2_DISPLAY_H;
+    const pivotY  = -((CREATURE2_DISPLAY_H - 40) * 0.5);
+    _c2BodyS.anchor.set(0.5, anchorY);
+    _c2PulseC.pivot.set(0, pivotY);
+    _c2PulseC.position.set(0, pivotY);
+    _c2FlipC.addChild(_c2BodyS);
+    _c2WiggleC.addChild(_c2FlipC);
+    _c2PulseC.addChild(_c2WiggleC);
+    _c2PosC.addChild(_c2PulseC);
+    window.pixiCreature.addChild(_c2PosC);
+    _c2Ready = true;
+  }
+
+  const tileAngle   = (creature2Pos / TILE_COUNT) * Math.PI * 2;
+  const screenAngle = tileAngle + rotation;
+  const surfR       = R + SURF_R + CAP_H - 5 + waveAt(tileAngle);
+  const tx = CX + Math.sin(screenAngle) * surfR;
+  const ty = CY - Math.cos(screenAngle) * surfR;
+  if (tx < -200 || tx > W + 200 || ty > H + 200) { _c2PosC.visible = false; return; }
+  _c2PosC.visible = true;
+
+  _c2PosC.position.set(tx, ty);
+  _c2PosC.rotation = screenAngle;
+
+  const bounceFrac = creature2BounceTimer / 0.2;
+  _c2PulseC.scale.set(creature2BounceTimer > 0 ? 1 - Math.sin(bounceFrac * Math.PI) * 0.10 : 1);
+
+  const wiggle = creature2Moving ? -Math.sin(frameNow * 0.006) * 0.05 : 0;
+  const pivotX = creature2Flip ? -CREATURE2_DISPLAY_W / 2 : CREATURE2_DISPLAY_W / 2;
+  _c2WiggleC.pivot.set(pivotX, 0);
+  _c2WiggleC.position.set(pivotX, 0);
+  _c2WiggleC.rotation = wiggle;
+  _c2FlipC.scale.x = creature2Flip ? -1 : 1;
+
+  const bodyImg = (c2LegReady && c2LegImgs[c2LegIdx].complete && c2LegImgs[c2LegIdx].naturalWidth)
+    ? c2LegImgs[c2LegIdx] : c2Img;
+  const bodyTex = _texFromImg(bodyImg, CREATURE2_DISPLAY_W, CREATURE2_DISPLAY_H);
+  if (bodyTex) _c2BodyS.texture = bodyTex;
+}
+
 function updateGrassSway(dtSec) {
   const rawWind  = windVel + playerWindVel + rotDriftWind;
   const windPct  = Math.min(100, Math.abs(rawWind) / MAX_WIND * 100);
@@ -1449,14 +1519,16 @@ function updateGrassSway(dtSec) {
   grassWindAmp  += (ampTargets[swayLevel]  - grassWindAmp)  * Math.min(1, dtSec * 1.5);
   grassWaveFreq += (freqTargets[swayLevel] - grassWaveFreq) * Math.min(1, dtSec * 1.5);
 
-  // Lean still tracks slow-smoothed wind so direction changes don't jerk
-  const lvlNames = ['Neutral','Slow','Medium','Fast'];
-  const lvlEl = document.getElementById('vGWLevel');
-  if (lvlEl) lvlEl.textContent = lvlNames[swayLevel];
-  const windEl = document.getElementById('vWindInd');
-  if (windEl) {
-    const dir = rawWind > 0.00005 ? '→' : rawWind < -0.00005 ? '←' : '·';
-    windEl.textContent = dir + Math.round(windMagSmoothed) + ' ';
+  // Wind UI readout — DOM writes trigger style/layout work, so update at ~6 Hz
+  if (_loopFrame % 10 === 0) {
+    const lvlNames = ['Neutral','Slow','Medium','Fast'];
+    const lvlEl = document.getElementById('vGWLevel');
+    if (lvlEl) lvlEl.textContent = lvlNames[swayLevel];
+    const windEl = document.getElementById('vWindInd');
+    if (windEl) {
+      const dir = rawWind > 0.00005 ? '→' : rawWind < -0.00005 ? '←' : '·';
+      windEl.textContent = dir + Math.round(windMagSmoothed) + ' ';
+    }
   }
   grassWindSmoothed += (rawWind - grassWindSmoothed) * Math.min(1, dtSec * LEAN_SMOOTH);
   const windLean  = Math.max(-0.9, Math.min(0.9, grassWindSmoothed * BLADE_WIND_SENS));
@@ -2230,27 +2302,39 @@ function updateRain(dt) {
 }
 
 function drawRain() {
-  if (!window.pixiRainGfx) return;
-  const gfx = window.pixiRainGfx;
-  gfx.clear();
-  if (rainParticles.length === 0) return;
-  for (const p of rainParticles) {
-    if (!p.visible) continue;
-    gfx.circle(p.x, p.y, p.size);
+  if (!window.pixiRainContainer || !_rainTex) return;
+  const n = rainParticles.length;
+  while (_rainPool.length < n) {
+    const s = new PIXI.Sprite(_rainTex);
+    s.anchor.set(0.5); s.alpha = 0.82;
+    window.pixiRainContainer.addChild(s); _rainPool.push(s);
   }
-  gfx.fill({ color: 0x64B9F5, alpha: 0.82 });
+  for (let i = 0; i < n; i++) {
+    const p = rainParticles[i], s = _rainPool[i];
+    if (!p.visible) { s.visible = false; continue; }
+    s.visible = true;
+    s.position.set(p.x, p.y);
+    s.scale.set(p.size / 7); // baked radius = 7px
+  }
+  for (let i = n; i < _rainPool.length; i++) _rainPool[i].visible = false;
 }
 
 function drawSplash() {
-  if (!window.pixiSplashGfx) return;
-  const gfx = window.pixiSplashGfx;
-  gfx.clear();
-  if (splashParticles.length === 0) return;
-  // Two alpha passes — bright for fresh drops, dim for fading ones
-  for (const s of splashParticles) if (s.life > 0.5) gfx.circle(s.x, s.y, s.size);
-  gfx.fill({ color: 0x50A0DC, alpha: 0.55 });
-  for (const s of splashParticles) if (s.life <= 0.5) gfx.circle(s.x, s.y, s.size);
-  gfx.fill({ color: 0x50A0DC, alpha: 0.22 });
+  if (!window.pixiSplashContainer || !_splashTex) return;
+  const n = splashParticles.length;
+  while (_splashPool.length < n) {
+    const s = new PIXI.Sprite(_splashTex);
+    s.anchor.set(0.5);
+    window.pixiSplashContainer.addChild(s); _splashPool.push(s);
+  }
+  for (let i = 0; i < n; i++) {
+    const p = splashParticles[i], s = _splashPool[i];
+    s.visible = true;
+    s.position.set(p.x, p.y);
+    s.scale.set(p.size / 6); // baked radius = 6px
+    s.alpha = p.life > 0.5 ? 0.55 : 0.22;
+  }
+  for (let i = n; i < _splashPool.length; i++) _splashPool[i].visible = false;
 }
 
 function updateEvaporation(dtSec) {
@@ -2431,37 +2515,80 @@ function spawnEvaporationCloud(tileIdx) {
 }
 
 // ── CLOUD PIXI MIGRATION ──────────────────────────────────────────────────────
-// One shared "unit puff" texture (PUFF_UNIT-px radius) baked once with a gradient
-// shadow. Per-puff, only transforms update each frame — no Canvas2D, no GPU upload.
-// Shadow: white top (away from planet) → blue-grey bottom (toward planet).
-// After outer.rotation=puffAngle the dark end always faces the planet. ✓
+// Each puff is ONE plain sprite. The white puff AND its clipped shadow crescent
+// are baked together into a texture, so the whole cloud layer batches into a
+// single WebGL draw call — no masks. (A sprite mask forces PixiJS to render the
+// puff and the mask to separate offscreen textures and composite them — per puff,
+// per frame. With 14 puffs/cloud that was the main cloud-related frame cost.)
+//
+// The shadow's position inside the puff shifts with the sun, so textures are
+// cached per (shadow-offset) quantised to 4 px. Offsets drift slowly, the edge
+// is 25%-alpha, so 4 px steps are imperceptible. Cache is cleared if it grows
+// past a safety cap (textures just re-bake lazily on demand).
 let _puffTex = null;
 const PUFF_UNIT = 100;                                    // 1 world-px = PUFF_UNIT in texture
 const _PUFF_W   = PUFF_UNIT * 2 + 50;                    // 250 px wide
 const _PUFF_H   = Math.round(PUFF_UNIT * 1.55) + 50;     // 205 px tall
 const _PUFF_CX  = _PUFF_W / 2;                           // 125 — pivot x
 const _PUFF_CY  = PUFF_UNIT + 25;                        // 125 — pivot y (semicircle centre)
+const _puffShadowTexCache = new Map();                   // "qx,qy" → PIXI.Texture
+
+// Traces the puff outline (top semicircle + bottom half-ellipse) on a 2D context
+function _puffPath(c) {
+  c.beginPath();
+  c.arc(_PUFF_CX, _PUFF_CY, PUFF_UNIT, Math.PI, 2 * Math.PI, false);
+  c.ellipse(_PUFF_CX, _PUFF_CY, PUFF_UNIT, PUFF_UNIT * 0.55, 0, 0, Math.PI, false);
+  c.closePath();
+}
 
 function _bakePuffTexture() {
   if (_puffTex) return;
   const oc = new OffscreenCanvas(_PUFF_W, _PUFF_H);
   const c  = oc.getContext('2d');
-  // White puff shape only — shadow is rendered separately as a live PIXI.Graphics
-  // so it can shift based on the cloud's position relative to the sun each frame
   c.fillStyle = '#ffffff';
-  c.beginPath();
-  c.arc(_PUFF_CX, _PUFF_CY, PUFF_UNIT, Math.PI, 2 * Math.PI, false);
-  c.ellipse(_PUFF_CX, _PUFF_CY, PUFF_UNIT, PUFF_UNIT * 0.55, 0, 0, Math.PI, false);
-  c.closePath();
+  _puffPath(c);
   c.fill();
-  _puffTex = PIXI.Texture.from(oc);
+  _puffTex = PIXI.Texture.from(oc); // shadow-less fallback used at sprite creation
+}
+
+// Returns a texture of the white puff with its shadow disc (clipped to the puff
+// shape) at the given puff-local offset. Cached per 4-px-quantised offset.
+function _getPuffShadowTex(shdX, shdY) {
+  const qx  = Math.round(shdX / 4) * 4;
+  const qy  = Math.round(shdY / 4) * 4;
+  const key = qx + ',' + qy;
+  let tex = _puffShadowTexCache.get(key);
+  if (tex) return tex;
+  // Safety valve: offsets are bounded so this should rarely trip, but if sliders
+  // push the cache big, drop everything and let textures re-bake as needed.
+  if (_puffShadowTexCache.size >= 160) {
+    for (const t of _puffShadowTexCache.values()) t.destroy(true);
+    _puffShadowTexCache.clear();
+  }
+  const oc = new OffscreenCanvas(_PUFF_W, _PUFF_H);
+  const c  = oc.getContext('2d');
+  c.fillStyle = '#ffffff';
+  _puffPath(c);
+  c.fill();
+  c.save();
+  _puffPath(c);
+  c.clip(); // shadow only shows inside the puff — same as the old mask
+  c.fillStyle = 'rgba(0,0,0,0.25)';
+  c.beginPath();
+  c.arc(_PUFF_CX + qx, _PUFF_CY + qy, PUFF_UNIT * CLOUD_SHD_SCALE, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+  tex = PIXI.Texture.from(oc);
+  _puffShadowTexCache.set(key, tex);
+  return tex;
 }
 
 function _invalidatePuffTexture() {
   if (_puffTex) { _puffTex.destroy(true); _puffTex = null; }
+  for (const t of _puffShadowTexCache.values()) t.destroy(true);
+  _puffShadowTexCache.clear(); // CLOUD_SHD_SCALE is baked in — re-bake on slider change
   _bakePuffTexture();
   // Destroy all cloud pixi objects — they'll be lazily recreated next frame via _addCloudPixi.
-  // Required because shadow Graphics size (CLOUD_SHD_SCALE) is baked at creation time.
   for (const cl of clouds) _destroyCloudPixi(cl);
 }
 
@@ -2471,31 +2598,12 @@ function _addCloudPixi(cloud) {
   const container = new PIXI.Container();
   window.pixiClouds.addChild(container);
   const puffItems = cloud.puffs.map(() => {
-    const outer  = new PIXI.Container(); // world position + puffAngle rotation
-    const inner  = new PIXI.Container(); // dr scale + squish (in outer's rotated space)
-
-    // White puff base
+    // One sprite per puff — puff + shadow live in the same baked texture.
+    // pivot = puff centre, so rotation/scale happen around the middle.
     const sprite = new PIXI.Sprite(_puffTex);
-    sprite.pivot.set(_PUFF_CX, _PUFF_CY); // pivot at puff centre → origin of inner
-
-    // Shadow circle — dark disc rendered on top of puff, clipped to puff shape.
-    // Position is updated every frame in drawClouds() with sun-based horizontal shift.
-    const shadowGfx = new PIXI.Graphics();
-    shadowGfx.circle(0, 0, PUFF_UNIT * CLOUD_SHD_SCALE).fill({ color: 0x000000, alpha: 0.25 });
-
-    // Mask sprite clips shadow to puff outline. renderable=false hides it from the normal
-    // scene pass but PixiJS still renders it when processing the alpha mask effect.
-    const maskSprite = new PIXI.Sprite(_puffTex);
-    maskSprite.pivot.set(_PUFF_CX, _PUFF_CY);
-    maskSprite.renderable = false;
-    shadowGfx.mask = maskSprite;
-
-    inner.addChild(sprite);
-    inner.addChild(shadowGfx);
-    inner.addChild(maskSprite);
-    outer.addChild(inner);
-    container.addChild(outer);
-    return { outer, inner, shadowGfx };
+    sprite.pivot.set(_PUFF_CX, _PUFF_CY);
+    container.addChild(sprite);
+    return sprite;
   });
   const waterLabel = new PIXI.Text({ text: '', style: { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold', fill: 0x50B4FF } });
   waterLabel.anchor.set(0.5, 0.5);
@@ -2518,36 +2626,42 @@ function drawClouds() {
     const sx  = CX + Math.sin(c.angle) * c.radius;
     const sy  = CY - Math.cos(c.angle) * c.radius;
     const bob = Math.sin(t + c.phase) * 9;
-    c.pixi.waterLabel.text    = 'W' + Math.round(c.water);
-    c.pixi.waterLabel.position.set(sx, sy + c.centerR + 20);
+    // Only touch .text when visible — changing PIXI.Text re-rasterizes the whole
+    // label on the CPU and re-uploads it to the GPU, every frame while raining
+    if (showNumbers) {
+      c.pixi.waterLabel.text = 'W' + Math.round(c.water);
+      c.pixi.waterLabel.position.set(sx, sy + c.centerR + 20);
+    }
     c.pixi.waterLabel.visible = showNumbers;
     const tx  = Math.cos(c.angle);
     const ty  = Math.sin(c.angle);
     const nx  =  Math.sin(c.angle);
     const ny  = -Math.cos(c.angle);
     for (let pi = 0; pi < c.puffs.length; pi++) {
-      const p    = c.puffs[pi];
-      const item = c.pixi.puffItems[pi];
-      if (p.r < 1) { item.outer.visible = false; continue; }
-      item.outer.visible = true;
+      const p      = c.puffs[pi];
+      const sprite = c.pixi.puffItems[pi];
+      if (p.r < 1) { sprite.visible = false; continue; }
+      sprite.visible = true;
       const px        = sx + p.dx * tx + p.dy * nx;
       const py        = sy + p.dx * ty + p.dy * ny + bob;
       const wobble    = 1 + Math.sin(t * 0.2 + p.wp) * p.wa;
       const dr        = (p.r * wobble) / PUFF_UNIT; // world px → texture-unit scale
       const puffAngle = Math.atan2(px - CX, CY - py);
       const sq        = p.squish || 0;
-      item.outer.position.set(px, py);
-      item.outer.rotation = puffAngle;
-      // Squish is applied in outer's rotated space (tangential × radial axes) — matches Canvas2D
-      item.inner.scale.set(dr * (1 + sq * 0.75), dr * (1 - sq * 0.50));
+      sprite.position.set(px, py);
+      sprite.rotation = puffAngle;
+      // Squish is applied in the sprite's rotated space (tangential × radial axes)
+      sprite.scale.set(dr * (1 + sq * 0.75), dr * (1 - sq * 0.50));
 
       // Sun-based shadow shift: shadow moves away from sun as cloud crosses the sky.
-      // sunShift is in inner-local units (PUFF_UNIT = 1 puff radius), then projected
-      // into outer's rotated coordinate frame so "horizontal in world" maps correctly.
+      // sunShift is in puff-local units (PUFF_UNIT = 1 puff radius), projected into
+      // the sprite's rotated frame so "horizontal in world" maps correctly. The
+      // offset picks which baked puff+shadow texture this puff uses this frame.
       const sunShift = (px - CX) / CX * PUFF_UNIT * CLOUD_SHD_SUN;
       const shdX = sunShift * Math.cos(puffAngle);
       const shdY = -sunShift * Math.sin(puffAngle) + PUFF_UNIT * CLOUD_SHD_OFFSET;
-      item.shadowGfx.position.set(shdX, shdY);
+      const tex  = _getPuffShadowTex(shdX, shdY);
+      if (sprite.texture !== tex) sprite.texture = tex;
     }
   }
 }
@@ -2832,6 +2946,436 @@ const HEART_DURATION = 7.0;
   blinkHalfImg.src   = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(halfSvg);
   blinkClosedImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(closedSvg);
 })();
+
+// Creature 2 SVG inlined — avoids file:// XHR restrictions
+const CREATURE2_SVG_SOURCE = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 217.292 243.888">
+  <defs>
+    <style>
+      .cls-1 {
+        mask: url(#mask-1);
+      }
+
+      .cls-2 {
+        opacity: .45;
+      }
+
+      .cls-2, .cls-3 {
+        mix-blend-mode: multiply;
+      }
+
+      .cls-4 {
+        opacity: .74;
+      }
+
+      .cls-5, .cls-6 {
+        fill: #1396a0;
+      }
+
+      .cls-7 {
+        fill: #071f2c;
+      }
+
+      .cls-8 {
+        fill: #fff;
+      }
+
+      .cls-9 {
+        mask: url(#mask);
+      }
+
+      .cls-10, .cls-6 {
+        stroke-width: 3px;
+      }
+
+      .cls-10, .cls-6, .cls-11 {
+        stroke: #071f2c;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-10, .cls-12 {
+        fill: #16bfd4;
+      }
+
+      .cls-13 {
+        filter: url(#luminosity-noclip-2);
+      }
+
+      .cls-14 {
+        fill: url(#radial-gradient-5);
+      }
+
+      .cls-15 {
+        fill: url(#radial-gradient);
+      }
+
+      .cls-16 {
+        fill: url(#radial-gradient-3);
+      }
+
+      .cls-17 {
+        fill: #fffbef;
+      }
+
+      .cls-18 {
+        isolation: isolate;
+      }
+
+      .cls-19 {
+        opacity: .52;
+      }
+
+      .cls-11 {
+        fill: #c989a6;
+        stroke-width: 2.539px;
+      }
+
+      .cls-20 {
+        fill: url(#radial-gradient-2);
+      }
+
+      .cls-21, .cls-22, .cls-23 {
+        opacity: .2;
+      }
+
+      .cls-21, .cls-24 {
+        fill: #2b81b8;
+      }
+
+      .cls-25 {
+        fill: url(#radial-gradient-4);
+      }
+
+      .cls-26 {
+        mix-blend-mode: overlay;
+      }
+
+      .cls-27 {
+        fill: #fff6d9;
+      }
+
+      .cls-3 {
+        opacity: .47;
+      }
+
+      .cls-23 {
+        fill: #1b5472;
+      }
+
+      .cls-28 {
+        filter: url(#luminosity-noclip);
+      }
+    </style>
+    <radialGradient id="radial-gradient" cx="98.26" cy="74.572" fx="98.26" fy="74.572" r="30.039" gradientTransform="translate(-9.445 -30.713) rotate(-.711) scale(.919 .98) skewX(-1.468)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".015" stop-color="#f3f8fb"/>
+      <stop offset=".078" stop-color="#c7dfef"/>
+      <stop offset=".139" stop-color="#a5cce5"/>
+      <stop offset=".196" stop-color="#8cbede"/>
+      <stop offset=".249" stop-color="#7eb5da"/>
+      <stop offset=".292" stop-color="#79b3d9"/>
+      <stop offset=".646" stop-color="#0069b0"/>
+      <stop offset=".852" stop-color="#0c4f7f"/>
+      <stop offset="1" stop-color="#173c5a"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-2" cx="97.802" cy="75.225" fx="97.802" fy="75.225" r="26.313" gradientTransform="translate(-9.445 -30.713) rotate(-.711) scale(.919 .98) skewX(-1.468)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".019" stop-color="#f3f8fb"/>
+      <stop offset=".096" stop-color="#c7dfef"/>
+      <stop offset=".171" stop-color="#a5cce5"/>
+      <stop offset=".241" stop-color="#8cbede"/>
+      <stop offset=".306" stop-color="#7eb5da"/>
+      <stop offset=".36" stop-color="#79b3d9"/>
+      <stop offset=".854" stop-color="#0069b0"/>
+      <stop offset=".913" stop-color="#014b7f"/>
+      <stop offset="1" stop-color="#051b30"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-3" cx="98.26" cy="77.191" fx="71.489" fy="77.191" r="26.776" gradientTransform="translate(-9.445 -30.713) rotate(-.711) scale(.919 .98) skewX(-1.468)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".029" stop-color="#f3f8fb"/>
+      <stop offset=".152" stop-color="#c7dfef"/>
+      <stop offset=".27" stop-color="#a5cce5"/>
+      <stop offset=".381" stop-color="#8cbede"/>
+      <stop offset=".483" stop-color="#7eb5da"/>
+      <stop offset=".567" stop-color="#79b3d9"/>
+      <stop offset=".854" stop-color="#0069b0"/>
+      <stop offset=".913" stop-color="#014b7f"/>
+      <stop offset="1" stop-color="#051b30"/>
+    </radialGradient>
+    <filter id="luminosity-noclip" x="63.027" y="35.366" width="33.84" height="34.32" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-color="#fff" result="bg"/>
+      <feBlend in="SourceGraphic" in2="bg"/>
+    </filter>
+    <mask id="mask" x="63.027" y="35.366" width="33.84" height="34.32" maskUnits="userSpaceOnUse">
+      <g class="cls-28">
+        <image width="141" height="143" transform="translate(63.027 35.366) scale(.24)" xlink:href="data:image/png;base64,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"/>
+      </g>
+    </mask>
+    <radialGradient id="radial-gradient-4" cx="98.021" cy="74.991" fx="98.021" fy="74.991" r="15.301" gradientTransform="translate(-9.445 -30.713) rotate(-.711) scale(.919 .98) skewX(-1.468)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#c0c9db"/>
+    </radialGradient>
+    <filter id="luminosity-noclip-2" x="63.027" y="35.366" width="33.84" height="34.32" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-color="#fff" result="bg"/>
+      <feBlend in="SourceGraphic" in2="bg"/>
+    </filter>
+    <mask id="mask-1" x="63.027" y="35.366" width="33.84" height="34.32" maskUnits="userSpaceOnUse">
+      <g class="cls-13">
+        <image width="141" height="143" transform="translate(63.027 35.366) scale(.24)" xlink:href="data:image/png;base64,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"/>
+      </g>
+    </mask>
+    <radialGradient id="radial-gradient-5" cx="98.724" cy="95.062" fx="98.724" fy="95.062" r="14.961" gradientTransform="translate(-9.445 -30.713) rotate(-.711) scale(.919 .98) skewX(-1.468)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#79b3d9"/>
+    </radialGradient>
+  </defs>
+  <g class="cls-18">
+    <g id="Creature_2" data-name="Creature 2">
+      <g id="Creature_2-2" data-name="Creature 2">
+        <g id="FrontBackLeg">
+          <g id="leg">
+            <path class="cls-6" d="M58.882,230.071c-4.209,1.927-8.74.948-12.847-.994-4.495-2.126-5.501-5.865-5.634-15.503-.123-8.886,1.369-17.872,3.015-26.147,1.786-8.976,5.771-25.572,10.055-25.983,17.871-1.813,9.834,19.774,11.083,28.166,1.129,7.586,3.053,18.44,2.005,26.52-1.137,8.765-3.07,11.831-7.677,13.941Z"/>
+            <g>
+              <path class="cls-5" d="M58.668,230.181c-4.209,1.927-27.837,3.48-28.701-7.763-.83-10.794,8.841-13.062,17.196-12.3"/>
+              <path class="cls-7" d="M59.292,231.545c-4.803,1.844-9.987,1.879-15.052,1.606-8.164-.542-17.661-4.108-15.771-14.099,1.184-8.938,11.309-11.312,18.694-8.935-7.657.729-16.976,2.932-15.493,12.527,1.409,8.238,20.143,7.901,26.374,6.173,0,0,1.249,2.727,1.249,2.727h0Z"/>
+            </g>
+          </g>
+          <g id="Spots">
+            <path class="cls-23" d="M42.13,212.923c-4.948.315-8.774,3.486-8.547,7.083s4.382,3.838,9.33,3.523,8.815-1.067,8.587-4.663c-.227-3.597-4.423-6.257-9.37-5.942Z"/>
+            <path class="cls-23" d="M47.499,197.196c.004,2.222,2.023,4.02,4.509,4.016s2.831-1.856,2.826-4.078-.356-3.972-2.842-3.968-4.498,1.809-4.494,4.031Z"/>
+          </g>
+        </g>
+        <g id="FrontTopLeg">
+          <g id="Leg">
+            <path class="cls-10" d="M79.451,235.856c-4.017,2.301-8.618,1.737-12.885.176-4.67-1.709-6.01-5.342-7.017-14.928-.929-8.838-.258-17.923.63-26.313.964-9.101,2.271-24.909,6.5-25.707,14.373-2.28,12.743,17.719,14.749,25.963,1.813,7.452,4.714,18.086,4.403,26.229-.337,8.832-1.984,12.061-6.38,14.58Z"/>
+            <g>
+              <path class="cls-12" d="M79.248,235.985c-4.017,2.301-27.406,5.992-29.287-5.127-1.806-10.674,7.619-13.81,16.009-13.81"/>
+              <path class="cls-7" d="M79.994,237.287c-4.616,2.273-9.775,2.778-14.844,2.966-8.18.201-17.961-2.488-16.985-12.61.368-9.008,10.236-12.292,17.806-10.594-7.559,1.42-16.64,4.46-14.293,13.881,2.15,8.076,20.778,6.041,26.825,3.755,0,0,1.491,2.603,1.491,2.603h0Z"/>
+            </g>
+          </g>
+          <g id="Spots-2" data-name="Spots">
+            <path class="cls-21" d="M68.333,193.131c-2.002.771-1.508,6.897,1.103,13.683,2.612,6.786,4.646,7.094,6.648,6.324s3.215-2.328.603-9.114c-2.612-6.786-6.352-11.663-8.354-10.892Z"/>
+            <path class="cls-21" d="M67.689,227.303c-.115,2.142,2.709,4.036,6.307,4.229s4.198-1.565,4.313-3.708-.299-3.858-3.897-4.051-6.608,1.387-6.723,3.53Z"/>
+            <path class="cls-21" d="M53.961,227.882c.004,2.222,2.023,4.02,4.509,4.016s2.831-1.856,2.826-4.078-.356-3.972-2.842-3.968c-2.486.004-4.498,1.809-4.494,4.031Z"/>
+          </g>
+        </g>
+        <g id="BackInsetLeg">
+          <g id="Leg-2" data-name="Leg">
+            <path class="cls-6" d="M146.388,234.834c-4.181,1.987-8.726,1.071-12.86-.812-4.525-2.062-5.583-5.787-5.852-15.422-.248-8.883,2.872-43.473,4.402-51.771,1.659-9,3.544-13.073,7.822-13.544,17.946-.777,10.221,32.638,11.589,41.012,1.236,7.569,3.313,18.395,2.379,26.489-1.013,8.78-2.902,11.874-7.479,14.048Z"/>
+            <g>
+              <path class="cls-5" d="M146.175,234.947c-4.181,1.987-27.785,3.873-28.808-7.357-.982-10.781,8.656-13.185,17.02-12.542"/>
+              <path class="cls-7" d="M146.819,236.302c-4.776,1.912-9.959,2.02-15.028,1.819-8.171-.427-17.718-3.858-15.969-13.875,1.058-8.953,11.148-11.471,18.566-9.198-7.646.837-16.933,3.171-15.315,12.744,1.525,8.217,20.253,7.616,26.458,5.8,0,0,1.288,2.709,1.288,2.709h0Z"/>
+            </g>
+          </g>
+          <g id="Spots-3" data-name="Spots">
+            <path class="cls-23" d="M126.529,224.426c.004,2.222,2.023,4.02,4.509,4.016s2.831-1.856,2.826-4.078-.356-3.972-2.842-3.968-4.498,1.809-4.494,4.031Z"/>
+            <path class="cls-23" d="M132.849,199.026c.01,4.958,2.939,8.972,6.543,8.967s4.1-4.138,4.091-9.095c-.01-4.958-.522-8.864-4.126-8.858-3.604.006-6.517,4.029-6.508,8.987Z"/>
+          </g>
+        </g>
+        <g id="tail">
+          <path class="cls-10" d="M215.443,107.522c3.367,9.583-18.501,15.012-27.453,17.223-8.253,2.038-26.26,9.893-27.814-1.503-.561-4.114,5.661-6.525,13.698-7.303,24.086-2.331,38.201-18,41.568-8.417Z"/>
+          <path id="Spot" class="cls-21" d="M185.52,117.937c.003,1.79,2.022,3.237,4.508,3.233s2.831-1.496,2.828-3.286-.354-3.2-2.84-3.195-4.499,1.459-4.495,3.249Z"/>
+        </g>
+        <g id="BackFrontLeg">
+          <g id="leg-2" data-name="leg">
+            <path class="cls-10" d="M167.897,239.482c-4.017,2.301-8.618,1.737-12.885.176-4.67-1.709-6.01-5.342-7.017-14.928-.929-8.838-.469-43.565.42-51.956.964-9.101,2.532-13.306,6.76-14.103,14.842-.853,12.693,31.758,14.699,40.002,1.813,7.452,4.714,18.086,4.403,26.229-.337,8.832-1.984,12.061-6.38,14.58Z"/>
+            <g>
+              <path class="cls-12" d="M167.694,239.611c-4.017,2.301-27.406,5.992-29.287-5.127-1.806-10.674,7.619-13.81,16.009-13.81"/>
+              <path class="cls-7" d="M168.44,240.913c-4.616,2.273-9.775,2.778-14.844,2.966-8.18.201-17.961-2.488-16.985-12.61.368-9.008,10.236-12.292,17.806-10.594-7.56,1.42-16.64,4.46-14.293,13.881,2.151,8.076,20.777,6.041,26.825,3.755,0,0,1.491,2.603,1.491,2.603h0Z"/>
+            </g>
+          </g>
+          <g id="Spots-4" data-name="Spots">
+            <path class="cls-21" d="M153.913,195.572c.01,4.958,2.939,8.972,6.543,8.967s4.1-4.138,4.091-9.095c-.01-4.958-.522-8.864-4.126-8.858-3.604.006-6.517,4.029-6.508,8.987Z"/>
+            <path class="cls-21" d="M151.77,223.801c-4.948.315-8.774,3.486-8.547,7.083s4.382,3.838,9.33,3.523,8.815-1.067,8.587-4.663c-.227-3.597-4.423-6.257-9.37-5.942Z"/>
+            <path class="cls-21" d="M154.377,215.93c.004,2.222,2.023,4.02,4.509,4.016s2.831-1.856,2.826-4.078-.356-3.972-2.842-3.968-4.498,1.809-4.494,4.031Z"/>
+          </g>
+        </g>
+        <g id="Body">
+          <g id="horns1">
+            <path class="cls-17" d="M86.319,36.281l-1.453-.028-.178-13.98,1.206-.255c.94-.198,2.096-.291,3.638-.291,1.16,0,2.381.051,3.674.104,1.302.054,2.647.109,3.929.109,4.633,0,6.879-.779,7.284-2.526,1.729-7.457.811-10.05.11-10.932-.249-.313-.701-.729-1.756-.729l-.281.004c-.615,0-1.104-.08-1.497-.243-.746-.311-1.209-.972-1.209-1.724,0-2.478,5.462-4.288,8.306-4.288,2.622,0,4.543,1.116,5.409,3.143,2.196,5.133,1.222,18.69-1.119,24.362-.765,1.854-1.674,2.972-2.778,3.417-3.691,1.49-15.585,3.863-22.715,3.863,0,0-.384-.002-.569-.005Z"/>
+            <path class="cls-7" d="M108.091,3c1.742,0,3.324.581,4.031,2.233,2.402,5.616.713,24.267-3.08,25.799-3.694,1.492-15.359,3.754-22.156,3.754-.183,0-.363-.001-.538-.005l-.144-11.296c.926-.196,2.066-.259,3.329-.259,2.316,0,5.042.213,7.602.213,4.239,0,8.025-.584,8.745-3.688,1.379-5.95,2.184-13.499-3.106-13.499-.044,0-.089,0-.134.001-.051.001-.1.002-.148.002-3.553,0,1.474-3.256,5.6-3.256M108.091,0v3s0-3,0-3c-3.302,0-7.991,1.724-9.324,4.032-.628,1.088-.644,2.361-.042,3.405.697,1.207,1.964,1.819,3.766,1.819.071,0,.143,0,.219-.002h.063c.452,0,.533.101.581.161.146.184,1.375,2.015-.397,9.66-.095.41-.853,1.365-5.822,1.365-1.25,0-2.58-.055-3.866-.108-1.309-.054-2.545-.105-3.736-.105-1.649,0-2.904.103-3.949.323l-2.411.51.031,2.464.144,11.296.037,2.906,2.906.055c.194.004.393.005.595.005,6.923,0,18.984-2.238,23.279-3.973,1.498-.605,2.676-1.991,3.603-4.237,2.47-5.986,3.491-19.962,1.112-25.523C113.778,1.477,111.304,0,108.091,0h0Z"/>
+          </g>
+          <g id="horns2">
+            <path class="cls-17" d="M31.142,36.75c-7.13,0-19.019-2.372-22.707-3.862-1.104-.445-2.013-1.563-2.777-3.417-2.34-5.669-3.312-19.219-1.118-24.348.866-2.026,2.787-3.142,5.407-3.142,2.843,0,8.303,1.81,8.303,4.286,0,.462-.195,1.968-2.707,1.968,0,0-.186-.002-.188-.002-1.148,0-1.6.414-1.848.727-.7.881-1.617,3.473.111,10.925.405,1.746,2.649,2.524,7.279,2.524,1.28,0,2.624-.056,3.924-.109,1.292-.054,2.513-.104,3.672-.104,1.542,0,2.698.093,3.639.291l1.205.255-.178,13.976-1.453.027c-.185.003-.373.005-.564.005Z"/>
+            <path class="cls-7" d="M9.947,3.482c4.123,0,9.148,3.254,5.597,3.254-.048,0-.097,0-.148-.002-.045,0-.089-.001-.133-.001-5.287,0-4.483,7.545-3.105,13.492.719,3.101,4.503,3.686,8.74,3.686,2.559,0,5.284-.213,7.599-.213,1.262,0,2.401.063,3.326.259l-.144,11.29c-.176.003-.356.005-.539.005-6.793,0-18.451-2.262-22.142-3.752-3.791-1.531-5.479-20.172-3.079-25.785.706-1.651,2.287-2.231,4.029-2.231M9.947.482C6.735.482,4.261,1.958,3.16,4.533c-2.378,5.559-1.358,19.528,1.111,25.511.927,2.245,2.105,3.631,3.602,4.235,4.293,1.734,16.347,3.97,23.266,3.97.203,0,.402-.002.596-.005l2.906-.055.037-2.906.144-11.29.031-2.464-2.411-.51c-1.045-.221-2.298-.323-3.946-.323-1.191,0-2.427.051-3.735.105-1.285.053-2.615.108-3.864.108-4.965,0-5.722-.953-5.817-1.363-1.771-7.64-.543-9.47-.397-9.653.048-.06.128-.161.579-.161h.064c.075.002.148.003.218.003.817,0,1.495-.117,2.074-.358,1.315-.548,2.132-1.739,2.132-3.108C19.749,2.524,13.274.482,9.947.482h0Z"/>
+          </g>
+          <g id="LeftEar">
+            <path class="cls-12" d="M19.584,33.107S.419,49.941,1.8,60.646c1.381,10.705,7.209,21.065,11.914,19.899,7.758-1.922,3.788-26.897,4.133-30.869"/>
+            <path class="cls-7" d="M19.584,33.107c-3.716,6.776-9.497,11.581-13.181,18.175-1.776,3.111-3.319,6.446-2.843,9.607.442,3.608,1.393,7.196,2.839,10.529,1.277,3.061,5.884,11.364,8.998,5.817,2.215-4.889,1.976-10.739,2.17-16.145.077-3.359-.112-8.109.28-11.414.925,7.622,2.474,15.146,1.652,22.93-.28,4.003-2.422,10.574-7.736,9.388-7.091-2.287-11.105-15.498-11.763-22.246.083-7.727,5.496-14.203,10.308-19.657,2.589-2.868,5.539-5.439,9.276-6.986h0Z"/>
+          </g>
+          <path id="Torso" class="cls-10" d="M99.508,44.204c-.937-15.226-6.329-24.127-15.182-27.917S24.203,10.115,18.833,38.881c-7.435,38.354-4.957,75.457.413,113.812.895,5.906,6.893,20.199,19.065,26.932s98.242,14.757,130.047-8.172c17.761-12.507,12.392-37.103,6.609-55.03-8.674-26.681-38.827-17.926-60.719-21.678-3.717-.417-6.609-2.501-9.104-5.131-4.701-4.358-4.7-30.183-5.637-45.41Z"/>
+          <g id="RightEar">
+            <path class="cls-12" d="M95.096,34.79s19.165,16.835,17.784,27.54-7.209,21.065-11.914,19.899c-7.758-1.922-3.788-26.897-4.133-30.869"/>
+            <path class="cls-7" d="M95.096,34.79c7.899,3.048,20.049,17.906,19.584,26.643-.659,6.747-4.665,19.95-11.763,22.246-5.315,1.181-7.454-5.383-7.736-9.388-.821-7.783.727-15.309,1.652-22.93.39,3.285.198,8.066.28,11.414.193,5.404-.045,11.258,2.169,16.145,3.115,5.551,7.724-2.763,8.998-5.817,1.446-3.333,2.397-6.922,2.839-10.529.476-3.161-1.068-6.496-2.843-9.607-3.686-6.595-9.465-11.396-13.182-18.175h0Z"/>
+          </g>
+          <g id="Neckline">
+            <line class="cls-12" x1="102.11" y1="81.646" x2="104.042" y2="101.303"/>
+            <path class="cls-7" d="M103.389,81.521c.428,3.266.697,6.548.855,9.839.141,3.32.484,6.649-.203,9.943-1.838-4.65-2.052-9.714-2.729-14.617-.197-1.634-.318-3.276-.418-4.92l2.494-.245h0Z"/>
+          </g>
+          <g id="bangs">
+            <path class="cls-7" d="M35.441,29.017c-1.182,2.38-2.16,5.264-1.023,7.735,0,0-1.462-.375-1.462-.375.553-.606,1.136-1.196,1.791-1.715,2.397-2.017,5.414-3.23,8.439-3.874,0,0-.456,1.626-.456,1.626-.666,2.255.74,4.085,1.863,6.056,0,0-1.816.216-1.816.216.824-3.266,2.74-6.096,5.51-8.064.706,3.847,3.228,6.947,6.234,9.396,0,0-1.699.468-1.699.468.999-2.927,1.168-6.101.618-9.177l-.36-2.012c2.371,1.016,4.848,2.117,6.675,4.049,1.382,1.398,2.429,3.135,3.048,4.978l-1.82-.253c1.368-1.848,1.928-4.097,1.43-6.35,0,0-.274-1.341-.274-1.341l1.288.175c2.744.607,4.571,2.746,5.829,5.117,0,0-1.26.206-1.26.206.31-1.588.551-3.277.478-4.917-.035-.551-.094-1.107-.268-1.651.647.956.901,2.144,1.051,3.283.248,1.708.057,3.69-.089,5.421,0,0-1.105-1.729-1.105-1.729-1.083-1.569-2.893-3.396-4.789-3.818,0,0,1.013-1.166,1.013-1.166.702,2.689.002,5.732-1.613,7.959,0,0-1.14,1.647-1.14,1.647l-.68-1.901c-1.112-3.208-3.699-5.545-6.78-6.889,0,0,1.511-1.182,1.511-1.182.731,3.897.244,8.025-1.263,11.723-3.219-2.684-6.469-5.746-7.597-9.981,0,0,1.637.532,1.637.532-1.836,1.466-3.006,3.65-3.677,6.017l-.658,2.323-1.158-2.107c-1.286-2.115-2.872-4.86-2.021-7.54,0,0,1.196,1.199,1.196,1.199-1.496.406-2.883.978-4.155,1.796-1.645,1.116-3.205,2.514-4.853,3.664,0,0-.324-1.221-.324-1.221-.867-3.114.673-6.163,2.732-8.322h0Z"/>
+          </g>
+          <g id="spots" class="cls-22">
+            <path class="cls-24" d="M108.579,117.655c0,8.365-8.603,15.363.672,15.363s16.793-6.781,16.793-15.146-7.519-15.146-16.793-15.146-.672,6.564-.672,14.928Z"/>
+            <path class="cls-24" d="M123.181,146.258c-9.926.877-20.468.577-19.524,11.264s23.727,8.773,33.456,6.616,4.796-7.984,3.852-18.67c-.944-10.686-7.857-.086-17.784.791Z"/>
+            <path class="cls-24" d="M81.623,87.836c-7.213.786-7.46,1.33-7.038,7.929.423,6.598,9.593,4.383,16.695,2.809,7.102-1.574,5.504-1.914,5.081-8.512s-7.525-3.011-14.738-2.225Z"/>
+            <path class="cls-24" d="M78.502,21.219c-3.995.319-3.652,3.054-3.212,7.619s5.481,3.321,9.389,2.454,3.008-1.15,2.568-5.715-4.75-4.677-8.745-4.358Z"/>
+            <path class="cls-24" d="M46.297,19.568c-3.995.319-10.191,2.784-9.751,7.349s11.556,1.224,15.464.357,3.008-1.15,2.568-5.715-4.286-2.31-8.281-1.991Z"/>
+            <path class="cls-24" d="M100.187,63.878c-.463,2.877-.224,3.026,3.076,3.502s3.291-3.299,3.352-6.209-.294-2.323-3.595-2.8c-3.301-.477-2.371,2.629-2.834,5.506Z"/>
+            <path class="cls-24" d="M145.522,107.198c-4.256.376-8.777.248-8.372,4.83s10.174,3.762,14.346,2.837,7.283-4.361,6.878-8.944-8.596.901-12.852,1.277Z"/>
+            <path class="cls-24" d="M57.842,167.82c.953-.558-4.186-11.861-.777-18.129,2.198-4.041-13.411-5.67-17.069-3.461s-5.509,6.459-3.662,10.672,17.821,13.077,21.509,10.919Z"/>
+            <path class="cls-24" d="M22.174,133.875c.084.503,5.726,2.356,8.074,4.821,1.514,1.589,12.807-6.153,12.454-8.095s-8.769-4.58-11.145-4.428-9.706,5.755-9.383,7.702Z"/>
+            <path class="cls-24" d="M42.195,119.121c.843-.496,6.519-6.605.727-13.72s-10.795-14.307-14.037-12.35c-3.242,1.957-12.023,17.932-3.931,19.408,8.092,1.476,13.977,8.583,17.24,6.662Z"/>
+            <path class="cls-24" d="M92.37,150.433c-4-9.361-12.026-11.305-17.927-4.342-5.9,6.963-1.062,3.083-.916,14.508.146,11.425,7.014,14.21,12.915,7.248,5.9-6.963,9.929-8.053,5.928-17.414Z"/>
+            <path class="cls-24" d="M101.805,179.519c.211,2.135,6.248,3.286,13.484,2.57,7.236-.716,8.073-2.595,7.862-4.73s-1.391-3.718-8.627-3.002-12.931,3.026-12.72,5.162Z"/>
+            <path class="cls-24" d="M169.824,132.193c-.226-6.838-6.3-12.185-13.566-11.943s-12.974,5.98-12.749,12.817,5.429,1.504,12.695,1.263c7.267-.241,13.845,4.701,13.62-2.137Z"/>
+            <ellipse class="cls-24" cx="74.082" cy="119.811" rx="10.26" ry="13.231" transform="translate(-59.609 164.19) rotate(-76.634)"/>
+            <path class="cls-24" d="M46.251,50.846c-.852,2.869-.379,3.023,6.128,3.567,6.507.545,6.409-3.233,6.471-6.144s-.627-2.33-7.133-2.875c-6.507-.545-4.613,2.582-5.465,5.451Z"/>
+            <path class="cls-24" d="M40.384,67.367c-.549,6.506,11.152,6.848,11.701.341.549-6.506-11.152-6.848-11.701-.341Z"/>
+            <path class="cls-24" d="M145.503,170.843c5.929,3.568,11.312.358,15.015-5.973.676-1.155,1.663-2.103,2.861-2.699,6.076-3.02,12.227-5.458,7.303-12.792-2.843-6.625-4.415,5.127-11.408,11.032-7.392,6.241-21.322,6.733-13.772,10.431Z"/>
+            <path class="cls-24" d="M56.003,131.512c-1.79-1.316-4.436-.759-5.909,1.244s-.187,3.38,1.603,4.696,3.408,2.072,4.88.069,1.215-4.693-.575-6.009Z"/>
+            <path class="cls-24" d="M51.544,106.369c.005,2.472,2.325,4.473,5.182,4.468s3.253-2.066,3.248-4.538-.409-4.42-3.266-4.415-5.17,2.013-5.165,4.486Z"/>
+          </g>
+        </g>
+        <g id="LeftEye">
+          <g>
+            <path class="cls-27" d="M10.786,52.94c-.838,7.39,5.732,13.271,11.417,14.297s13.088-1.767,14.849-10.933-6.421-15.322-13.043-15.079c-6.622.243-12.386,4.325-13.224,11.715Z"/>
+            <path class="cls-7" d="M11.448,53.015c-.942,9.994,12.619,16.963,20.235,10.488,2.391-1.924,3.832-4.969,4.343-8.132,1.061-6.442-4.524-12.433-10.79-12.963-6.529-.545-13.237,3.684-13.788,10.607h0ZM8.834,52.719c1.252-10.008,13.308-15.516,22.04-11.156,15.32,7.061,8.331,30.87-8.339,28.732-8.336-1.249-15.001-9.229-13.7-17.576h0Z"/>
+          </g>
+          <path class="cls-7" d="M13.644,52.767c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+          <path class="cls-8" d="M20.252,50.518c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534c.248-1.288-.736-2.156-1.667-2.122s-1.741.608-1.859,1.646Z"/>
+        </g>
+        <g id="RightEye">
+          <g>
+            <g>
+              <path class="cls-8" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+              <path class="cls-8" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+            </g>
+            <path class="cls-8" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+            <path class="cls-8" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+          </g>
+          <g class="cls-19">
+            <g>
+              <path class="cls-15" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+              <path class="cls-15" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+            </g>
+            <path class="cls-15" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+            <path class="cls-15" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+          </g>
+          <g class="cls-3">
+            <g>
+              <path class="cls-20" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+              <path class="cls-20" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+            </g>
+            <path class="cls-20" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+            <path class="cls-20" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+          </g>
+          <g class="cls-2">
+            <g>
+              <path class="cls-16" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+              <path class="cls-16" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+            </g>
+            <path class="cls-16" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+            <path class="cls-16" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+          </g>
+          <g class="cls-26">
+            <g class="cls-9">
+              <g>
+                <g>
+                  <path class="cls-25" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+                  <path class="cls-25" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+                </g>
+                <path class="cls-25" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+                <path class="cls-25" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+              </g>
+            </g>
+          </g>
+          <g class="cls-4">
+            <g class="cls-1">
+              <g>
+                <g>
+                  <path class="cls-14" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+                  <path class="cls-14" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+                </g>
+                <path class="cls-14" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+                <path class="cls-14" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+              </g>
+            </g>
+          </g>
+          <g>
+            <g>
+              <path class="cls-27" d="M66.969,49.978c-.838,7.39,5.732,13.271,11.417,14.297,5.685,1.027,12.617-1.757,14.378-10.924,1.761-9.166-5.95-15.331-12.572-15.089-6.622.243-12.386,4.325-13.224,11.715Z"/>
+              <path class="cls-7" d="M68.614,50.164c-1.222,9.222,11.598,17.41,19.12,10.58,2.338-2.052,3.648-5.183,4.117-8.352,1.14-6.416-4.219-12.642-10.579-12.996-6.589-.365-12.149,4.134-12.657,10.769h0ZM65.324,49.791c1.716-12.25,17.566-16.735,25.629-7.478,8.601,9.944,1.776,27.268-12.442,24.993-7.938-1.41-14.513-9.403-13.187-17.515h0Z"/>
+            </g>
+            <path class="cls-7" d="M76.909,48.754c-.404,3.557,2.759,6.387,5.495,6.881,2.736.494,5.73-.842,6.578-5.254s-2.521-7.381-5.708-7.265c-3.187.116-5.962,2.081-6.365,5.637Z"/>
+            <path class="cls-8" d="M83.517,46.505c-.118,1.039.806,1.865,1.605,2.01s1.673-.246,1.921-1.534-.736-2.156-1.667-2.122-1.741.608-1.859,1.646Z"/>
+          </g>
+        </g>
+        <g id="Mouth">
+          <g id="Tongue">
+            <path class="cls-11" d="M60.233,76.447c.96,10.307.703,16.14-8.722,15.127s-9.571-4.864-4.543-13.516"/>
+            <path class="cls-7" d="M52.646,87.511c-.355-2.825-.818-5.922-2.053-8.425,0,0,2.408-.803,2.408-.803.544,3.181.124,6.151-.355,9.228h0Z"/>
+          </g>
+          <path class="cls-7" d="M32.124,76.876c6.388.183,12.9.121,19.257-.313,3.206-.214,6.416-.428,9.612-.756,3.207-.396,6.314-.715,9.691-.799-.669.512-1.404.991-2.168,1.323-6.953,3.256-30.312,5.511-36.392.544h0Z"/>
+          <g>
+            <path class="cls-12" d="M73.513,81.799c-11.797.849-10.555-11.924-2.376-13.834"/>
+            <path class="cls-7" d="M73.513,81.799c-7.627,2.587-13.146-5.23-7.92-11.439,1.441-1.601,3.548-2.549,5.544-2.395-3.095,1.797-5.231,4.803-5.014,8.246.273,3.675,4.012,5.063,7.39,5.588h0Z"/>
+          </g>
+          <g>
+            <path class="cls-12" d="M29.267,83.072c11.797.849,10.555-11.924,2.376-13.834"/>
+            <path class="cls-7" d="M29.266,83.072c3.376-.524,7.119-1.914,7.39-5.588.216-3.445-1.917-6.447-5.014-8.246,1.996-.154,4.104.793,5.544,2.395,5.229,6.215-.301,14.026-7.921,11.439h0Z"/>
+          </g>
+        </g>
+        <g id="EyesClosed" display="none">
+          <g id="EyelidLeftClosed">
+            <path class="cls-12" d="M39.933,57.086s3.194-17.87-14.245-18.561c-14.332-.568-17.007,13.554-17.007,13.554,1.682,17.147,15.006,23.811,22.776,17.164,2.858-2.445,7.165.216,8.476-12.157Z"/>
+            <g>
+              <path class="cls-7" d="M14.12,50.611c3.776-2.657,8.764-3.447,13.327-2.93,5.731.88,12.777,3.554,14.371,9.754-4.471-2.154-8.143-5.544-13.031-6.809,0,0-1.762-.441-1.762-.441-4.264-.924-8.648-.837-12.904.426h0Z"/>
+              <path class="cls-7" d="M13.334,61.581c4.474-1.865,9.19-3.167,13.942-4.129,4.178-.684,8.451-1.886,12.716-1.388.612.139,1.25-.045,1.825,1.371-.622,1.104-1.196.967-1.788,1.123-1.746.408-3.512.572-5.296.656-7.128.319-14.362,1.104-21.398,2.367h0Z"/>
+              <path class="cls-7" d="M16.58,54.884c5.538-2.929,12.237-2.607,18.244-1.554,2.092.45,4.143,1.334,5.507,3.129-2.286.314-4.147.15-6.087-.197-5.828-1.04-11.707-1.937-17.664-1.378h0Z"/>
+            </g>
+            <path class="cls-7" d="M29.746,71.244c-11.625,4.326-26.873-6.655-23.226-19.65,3.731-14.189,17.086-16.929,28.838-10.134-11.168-3.153-21.985-1.752-25.039,11.056-2.401,10.895,9.46,18.997,19.427,18.728h0Z"/>
+          </g>
+          <g id="EyelidRightClosed">
+            <path class="cls-12" d="M97.213,56.87c-2.046-12.993-.518-21.41-17.957-22.101-14.332-.568-18.82,16.748-18.82,16.748,1.597,18.25,39.728,24.098,36.777,5.352Z"/>
+            <g>
+              <path class="cls-12" d="M87.775,38.793c13.727-1.036,18.193,25.385,3.43,29.14"/>
+              <path class="cls-7" d="M87.775,38.793c11.983-2.513,17.656,14.917,12.29,23.664-1.795,3.137-5.244,5.504-8.86,5.476,3.145-1.324,5.446-3.725,6.645-6.581,3.396-8.101.278-21.824-10.075-22.559h0Z"/>
+            </g>
+            <g>
+              <path class="cls-7" d="M92.336,43.445c-8.081-.41-16.489,1.551-21.851,7.984-1.335,1.336-2.559,2.798-4.018,4.021-.8-6.252,4.842-10.348,9.967-12.432,5.082-1.958,10.911-1.653,15.902.427h0Z"/>
+              <path class="cls-7" d="M95.333,56.781c-4.604,1.825-9.671,2.223-14.589,2.135-3.705-.133-7.49-.384-11.022-1.621-1.165-.445-2.338-.986-3.255-1.845,0,0,.997-1.412.997-1.412l6.354,1.449c6.96,1.577,14.391,2.309,21.516,1.294h0Z"/>
+              <path class="cls-7" d="M91.869,50.381c-8.353-.701-16.353,2.301-23.986,5.37,0,0-.512-1.775-.512-1.775,3.101-3.169,7.584-3.706,11.749-4.448,4.212-.599,8.71-.606,12.749.853h0Z"/>
+            </g>
+          </g>
+        </g>
+        <g id="EyesHalfClosed" display="none">
+          <g>
+            <g id="EyeLidLeftTop">
+              <path class="cls-12" d="M40.545,55.899s2.59-16.662-14.849-17.353c-14.332-.568-16.403,12.086-16.403,12.086,11.225-5.104,21.928-.863,31.252,5.266Z"/>
+              <path class="cls-7" d="M40.718,56.244c-10.493-6.289-22.146-7.684-33.674-3.582,0,0,.551-3.095.551-3.095,3.247-14.638,16.886-15.543,27.77-8.085-9.203-3.081-20.071-4.274-23.462,7.005-.169.55-.325,1.209-.393,1.657,0,0-2.543-2.178-2.543-2.178,2.794-.892,5.718-1.393,8.645-1.461,8.584-.205,17.465,3.193,23.106,9.739h0Z"/>
+            </g>
+            <g id="EyeLidLeftBottom">
+              <path class="cls-12" d="M8.204,58.213s2.301,13.823,16.629,13.139c3.062-.146,9.892-3.611,12.343-7.333,1.449-2.2,1.745-4.744,2.938-6.825-13.655,3.951-24.425,3.948-31.909,1.019Z"/>
+              <path class="cls-7" d="M40.114,57.194c-4.789,2.367-10.095,3.73-15.438,4.069-5.275.387-10.64-.479-15.791-.974,0,0,2.114-2.216,2.114-2.216.096.735.317,1.712.588,2.551,1.31,4.405,4.362,8.213,8.818,9.763,1.8.659,3.768,1.02,5.81,1.224-1.973.562-4.084.753-6.218.505-8.029-.925-12.622-8.388-13.316-15.945,6.07.266,11.979,1.52,17.969,1.812,5.179.306,10.283-.214,15.464-.789h0Z"/>
+            </g>
+          </g>
+          <g id="EyeLidRight1">
+            <g id="EyeLidRightTop">
+              <path class="cls-12" d="M94.276,47.942s-2.864-14.252-17.086-12.384-15.367,17.266-15.367,17.266c8.288-8.158,20.934-8.058,32.453-4.882Z"/>
+              <path class="cls-7" d="M62.946,52.652c3.376-10.594,22.658-13.412,30.148-5.717,1.22,1.262,2.248,2.791,2.463,4.53-1.135-1.007-2.368-1.781-3.704-2.322-8.005-3.239-22.301-2.459-28.908,3.509h0Z"/>
+            </g>
+            <g id="EyeLidRightBottom">
+              <path class="cls-12" d="M62.718,56.156s4.277,14.604,18.616,14.97,13.716-16.45,13.716-16.45c-4.999,5.619-18.341,6.727-32.332,1.479Z"/>
+              <path class="cls-7" d="M95.773,53.731c-4.383,10.292-21.578,12.413-29.7,5.436-1.239-1.1-2.308-2.36-3.015-3.832,2.864,1.189,5.545,1.96,8.314,2.395,8.306,1.269,17.164.806,24.401-3.999h0Z"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>`;
+// c2SvgText and c2Img are initialised below where they are declared
 // Hip pivot points (SVG coordinate space, derived from path geometry)
 const LEG_PIVOTS = {
   BackFrontLeg:  [154, 113],
@@ -2953,6 +3497,31 @@ function bakeCreatureLegFrame(a1, a2) {
     creatureLegReady = true;
   };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function bakeCreature2Frame(a1, a2) {
+  if (!c2SvgText) return;
+  const angles = { BackFrontLeg: a1, FrontTopLeg: a2, BackInsetLeg: -a1, FrontBackLeg: -a2, tail: c2TailAngle };
+  let svg = c2SvgText;
+  for (const [id, a] of Object.entries(angles)) {
+    const piv = LEG2_PIVOTS[id];
+    if (piv) svg = svg.replace(`id="${id}"`, `id="${id}" transform="rotate(${a.toFixed(1)},${piv[0]},${piv[1]})"`);
+  }
+  if (c2BlinkState === 1 || c2BlinkState === 3) {
+    svg = svg.replace('id="EyesHalfClosed" display="none"', 'id="EyesHalfClosed"');
+  } else if (c2BlinkState === 2) {
+    svg = svg.replace('id="EyesClosed" display="none"', 'id="EyesClosed"');
+  }
+  const img = c2LegImgs[c2LegNext];
+  // Revoke the OLD url for this slot now — it has been drawn at least one frame ago, safe to release
+  if (img._blobUrl) { URL.revokeObjectURL(img._blobUrl); img._blobUrl = null; }
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  img._blobUrl = url; // deferred revocation: released at start of next bake for this slot
+  img.onload = () => {
+    c2LegIdx = c2LegNext; c2LegNext = 1 - c2LegNext; c2LegReady = true;
+    // url intentionally NOT revoked here — _texFromImg still needs the image data next frame
+  };
+  img.src = url;
 }
 
 // Pre-bake all rocks to an offscreen canvas. Called once at startup and again on orientation change.
@@ -4295,6 +4864,35 @@ const CREATURE_DISPLAY_H = 126;
 const CREATURE_DISPLAY_W = CREATURE_SVG_W * (CREATURE_DISPLAY_H / CREATURE_SVG_H);
 const CREATURE_SPEED = 0.45; // tiles per second while walking
 let   creatureHome   = 5.5;  // center of roam range; set to actual spawn at init
+
+// ── CREATURE 2 ────────────────────────────────────────────────────────────────
+const CREATURE2_SVG_W = 217.292, CREATURE2_SVG_H = 243.888;
+const CREATURE2_DISPLAY_H = 180;
+const CREATURE2_DISPLAY_W = CREATURE2_SVG_W * (CREATURE2_DISPLAY_H / CREATURE2_SVG_H);
+const CREATURE2_SPEED = 0.4;
+const CREATURE2_RANGE = 20;
+let creature2Home = 30; // opposite side of planet from creature1
+let creature2Pos = 30, creature2Dir = 1, creature2Moving = false;
+let creature2ActionTimer = 0, creature2Flip = false, creature2Inited = false;
+let creature2BounceTimer = 0;
+
+const LEG2_PIVOTS = {
+  BackFrontLeg: [148, 162],
+  FrontTopLeg:  [68,  170],
+  BackInsetLeg: [135, 153],
+  FrontBackLeg: [55,  162],
+  tail:         [165, 117],
+};
+
+let c2SvgText = CREATURE2_SVG_SOURCE; // SVG already has EyesClosed/EyesHalfClosed display="none" baked in
+const c2Img = new Image();
+c2Img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(c2SvgText);
+let c2LegImgs = [new Image(), new Image()];
+let c2LegIdx = 0, c2LegNext = 1, c2LegReady = false;
+let c2LastA1 = 0, c2LastA2 = 0, c2LastTail = 0, c2Swing = 0;
+let c2BlinkState = 0, c2BlinkTimer = 3000 + Math.random() * 4000;
+let c2TailAngle = 0, c2TailWagging = false;
+let c2TailWagPhase = 0, c2TailWagTimer = 5000 + Math.random() * 5000, c2TailWagDur = 0;
 const CREATURE_RANGE = 25;   // tiles either side of home
 
 let creaturePos         = creatureHome;
@@ -4305,6 +4903,7 @@ let creatureFlip        = false;
 let creatureInited      = false;
 let creatureLastA1      = 0;
 let creatureLastA2      = 0;
+let creatureLastTail    = 0;
 let creatureSwing       = 0;  // smoothly lerped toward target swing (0 or 12)
 
 function setCreatureFlip(flipped) {
@@ -4374,8 +4973,8 @@ function updateCreature(dtSec) {
   const a1 = Math.sin(legPhase)            * swing;
   const a2 = Math.sin(legPhase + Math.PI)  * swing;
   // Only re-bake when angles shift by >0.5 degrees to avoid thrashing
-  if (Math.abs(a1 - (creatureLastA1 || 0)) > 0.5 || Math.abs(a2 - (creatureLastA2 || 0)) > 0.5 || tailWagging) {
-    creatureLastA1 = a1; creatureLastA2 = a2;
+  if (Math.abs(a1 - (creatureLastA1 || 0)) > 0.5 || Math.abs(a2 - (creatureLastA2 || 0)) > 0.5 || Math.abs(tailAngle - creatureLastTail) > 4) {
+    creatureLastA1 = a1; creatureLastA2 = a2; creatureLastTail = tailAngle;
     bakeCreatureLegFrame(a1, a2);
   }
 
@@ -4425,11 +5024,86 @@ function updateCreature(dtSec) {
   }
 }
 
+function updateCreature2(dtSec) {
+  if (!c2SvgText) return;
+
+  if (!creature2Inited) {
+    creature2Inited = true;
+    for (let d = 0; d < TILE_COUNT / 2; d++) {
+      if (!creatureNearWater(creature2Home + d, 2)) { creature2Pos = creature2Home + d + 0.5; break; }
+      if (!creatureNearWater(creature2Home - d, 2)) { creature2Pos = creature2Home - d + 0.5; break; }
+    }
+    creature2Home = creature2Pos;
+  }
+
+  creature2ActionTimer -= dtSec;
+  if (creature2ActionTimer <= 0) {
+    if (creature2Moving) {
+      creature2Moving = false;
+      creature2ActionTimer = 1.0 + Math.random() * 9.0;
+    } else {
+      if (Math.random() < 0.3) creature2Dir *= -1;
+      if (creatureTileIsWater(creature2Pos + creature2Dir * 1.5)) creature2Dir *= -1;
+      creature2Moving = true;
+      creature2Flip = creature2Dir > 0;
+      creature2ActionTimer = 2.0 + Math.random() * 5.0;
+    }
+  }
+
+  c2TailWagTimer -= dtSec * 1000;
+  if (!c2TailWagging && c2TailWagTimer <= 0) {
+    c2TailWagging = true; c2TailWagPhase = 0; c2TailWagDur = 1200 + Math.random() * 1300;
+  }
+  if (c2TailWagging) {
+    c2TailWagPhase += dtSec * 1000;
+    c2TailAngle = Math.sin(c2TailWagPhase * 0.021) * 20 * Math.max(0, 1 - c2TailWagPhase / c2TailWagDur);
+    if (c2TailWagPhase > c2TailWagDur) { c2TailWagging = false; c2TailAngle = 0; c2TailWagTimer = 5000 + Math.random() * 5000; }
+  }
+
+  const legPhase = frameNow * 0.005;
+  const swingTarget = creature2Moving ? 12 : 0;
+  c2Swing += (swingTarget - c2Swing) * Math.min(1, dtSec * 8);
+  const a1 = Math.sin(legPhase) * c2Swing;
+  const a2 = Math.sin(legPhase + Math.PI) * c2Swing;
+  if (Math.abs(a1 - c2LastA1) > 0.5 || Math.abs(a2 - c2LastA2) > 0.5 || Math.abs(c2TailAngle - c2LastTail) > 4) {
+    c2LastA1 = a1; c2LastA2 = a2; c2LastTail = c2TailAngle;
+    bakeCreature2Frame(a1, a2);
+  }
+
+  if (creature2BounceTimer > 0) creature2BounceTimer = Math.max(0, creature2BounceTimer - dtSec);
+  c2BlinkTimer -= dtSec * 1000;
+  if (c2BlinkTimer <= 0) {
+    c2BlinkState = (c2BlinkState + 1) % 4;
+    if      (c2BlinkState === 0) c2BlinkTimer = 3000 + Math.random() * 4000;
+    else if (c2BlinkState === 1) c2BlinkTimer = 80;
+    else if (c2BlinkState === 2) c2BlinkTimer = 60;
+    else                         c2BlinkTimer = 80;
+    bakeCreature2Frame(c2LastA1, c2LastA2);
+  }
+
+  if (creature2Moving) {
+    const aheadPos = creature2Pos + creature2Dir * 1.5;
+    if (creatureTileIsWater(aheadPos)) {
+      creature2Dir *= -1; creature2Moving = false;
+      creature2ActionTimer = 0.3 + Math.random() * 0.8;
+      return;
+    }
+    creature2Pos += creature2Dir * CREATURE2_SPEED * dtSec;
+    if (creature2Pos > creature2Home + CREATURE2_RANGE) {
+      creature2Pos = creature2Home + CREATURE2_RANGE; creature2Dir = -1;
+      creature2Moving = false; creature2ActionTimer = 0.3 + Math.random() * 0.7;
+    } else if (creature2Pos < creature2Home - CREATURE2_RANGE) {
+      creature2Pos = creature2Home - CREATURE2_RANGE; creature2Dir = 1;
+      creature2Moving = false; creature2ActionTimer = 0.3 + Math.random() * 0.7;
+    }
+  }
+}
+
 function drawCreature(c) {
   if (!creatureImg.complete || !creatureImg.naturalWidth) return;
   const tileAngle  = (creaturePos / TILE_COUNT) * Math.PI * 2;
   const screenAngle = tileAngle + rotation;
-  const surfR      = R + SURF_R + CAP_H + 5 + waveAt(tileAngle);
+  const surfR      = R + SURF_R + CAP_H - 5 + waveAt(tileAngle);
   const tx = CX + Math.sin(screenAngle) * surfR;
   const ty = CY - Math.cos(screenAngle) * surfR;
   if (tx < -200 || tx > W + 200 || ty > H + 200) return;
@@ -4502,6 +5176,7 @@ _rebuildWaveTables();
 // one PixiJS sprite. Single opaque texture = no alpha-compositing seam between
 // two sprites (which caused the faint diagonal line).
 let _planetOC = null, _planetOCCtx = null, _planetOCTex = null, _planetOCSprite = null;
+let _planetLastRot = -999, _planetLastHaloTick = 0; // position-based redraw tracking
 function _drawPlanetLayer() {
   if (!window.pixiPlanet) return;
   // Handle resize unconditionally — new canvas must be populated immediately.
@@ -4517,16 +5192,15 @@ function _drawPlanetLayer() {
     _planetGrad = null;
     _skyGrad = null; _sunBloom = null; _sunGrad = null;
   }
-  // Tiered redraw rate: keep 60 fps while spinning, drop to 30/20 fps as planet slows.
-  // The sprite holds the last-uploaded frame, so skipped frames show a slightly stale
-  // view — imperceptible at low velocity (<2px of motion between draws).
-  if (!needsResize) {
-    const absVel = Math.abs(velocity);
-    const skipMod = absVel > 0.005 ? 1   // fast spin  → every frame
-                  : absVel > 0.001 ? 2   // slow spin  → 30 fps
-                  :                  3;  // nearly still → 20 fps
-    if (_loopFrame % skipMod !== 0) return;
-  }
+  // Skip when nothing has visibly changed: planet hasn't moved ≥0.5 screen-px at
+  // the surface AND halos haven't needed a refresh in the last 3 frames.
+  // This prevents the 60 Hz sub-pixel Canvas2D AA "shake" at very slow rotation
+  // without causing the old 3-frame jump that affected fast rotation.
+  const rotMoved  = Math.abs(rotation - _planetLastRot) >= 0.5 / R;
+  const haloStale = (_loopFrame - _planetLastHaloTick) >= 3;
+  if (!needsResize && !rotMoved && !haloStale) return;
+  _planetLastRot      = rotation;
+  _planetLastHaloTick = _loopFrame;
   const _saveCtx = ctx;
   ctx = _planetOCCtx;
   ctx.clearRect(0, 0, W, H);
@@ -4866,6 +5540,7 @@ function loop(time) {
   updateGrassSway(dt / 1000);
   updateBirds(dt, haloVel);
   updateCreature(dt / 1000);
+  updateCreature2(dt / 1000);
   updateButterflies(dt);
   updateClouds(dt);
   updateRain(dt);
@@ -4961,7 +5636,7 @@ loop(performance.now());
     width:           W,
     height:          H,
     backgroundAlpha: 0,       // fully transparent — Canvas2D layers show through
-    antialias:       true,
+    antialias:       false,   // sprites get smooth edges from texture filtering; MSAA only cost GPU fill rate
     autoDensity:     true,    // handles hi-DPI screens automatically
     resolution:      window.devicePixelRatio || 1,
   });
@@ -4988,14 +5663,12 @@ loop(performance.now());
   const backGrassContainer   = new PIXI.Container(); // grass rows 3+2 (behind creature)
   const creatureContainer    = new PIXI.Container(); // the creature sprite
   const frontGrassContainer  = new PIXI.Container(); // grass rows 1+0 (in front of creature)
+  // Note: blades are assigned to sprites in depth order each frame, so child
+  // order already matches depth — sortableChildren would just re-sort per frame.
   const weatherContainer     = new PIXI.Container(); // rain, evaporation, splash
   const cloudsContainer      = new PIXI.Container(); // cloud puffs
   const butterflyContainer   = new PIXI.Container(); // butterflies
   const uiContainer          = new PIXI.Container(); // debug tile numbers
-
-  // Grass containers need depth-sorting so back blades render behind front blades
-  backGrassContainer.sortableChildren  = true;
-  frontGrassContainer.sortableChildren = true;
 
   // Planet container groups everything that sits on/around the planet surface
   const planetContainer = new PIXI.Container();
@@ -5012,9 +5685,11 @@ loop(performance.now());
     frontGrassContainer,
   );
 
-  const rainGfx   = new PIXI.Graphics(); // rain drops
-  const splashGfx = new PIXI.Graphics(); // splash dots on impact
-  weatherContainer.addChild(rainGfx, splashGfx);
+  const rainGfx   = new PIXI.Graphics(); // kept as layer slot (sprites render here instead)
+  const splashGfx = new PIXI.Graphics(); // kept as layer slot
+  const rainSprContainer   = new PIXI.Container();
+  const splashSprContainer = new PIXI.Container();
+  weatherContainer.addChild(rainGfx, rainSprContainer, splashGfx, splashSprContainer);
 
   app.stage.addChild(
     backgroundContainer,
@@ -5041,8 +5716,10 @@ loop(performance.now());
   window.pixiCreature   = creatureContainer;
   window.pixiFrontGrass = frontGrassContainer;
   window.pixiWeather    = weatherContainer;
-  window.pixiRainGfx    = rainGfx;
-  window.pixiSplashGfx  = splashGfx;
+  window.pixiRainGfx        = rainGfx;
+  window.pixiSplashGfx      = splashGfx;
+  window.pixiRainContainer   = rainSprContainer;
+  window.pixiSplashContainer = splashSprContainer;
   window.pixiClouds     = cloudsContainer;
   window.pixiButterflies = butterflyContainer;
   window.pixiUI         = uiContainer;
@@ -5062,6 +5739,7 @@ loop(performance.now());
   // Make it transparent so the PixiJS canvas shows through.
   canvas.style.opacity = '0';
 
+  _bakeRainTextures();
   console.log('[PixiJS] Migration complete — all rendering through PixiJS');
 })();
 </script>
