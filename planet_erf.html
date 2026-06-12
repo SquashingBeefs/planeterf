@@ -29,7 +29,7 @@
     position: absolute; top: 10px; right: 10px;
     display: flex; flex-direction: column; gap: 10px;
   }
-  #shadow-sliders, #halo-sliders, #dark-halo-sliders, #sliders, #cloud-puff-sliders, #grass-wind-sliders {
+  #shadow-sliders, #halo-sliders, #dark-halo-sliders, #sliders, #cloud-puff-sliders, #grass-wind-sliders, #phone-sliders {
     background: rgba(0,0,0,0.55); border-radius: 12px; padding: 10px 18px;
     font-family: sans-serif; font-size: 12px; color: #fff;
     display: flex; flex-direction: column; gap: 7px; min-width: 240px;
@@ -211,6 +211,14 @@
     </div>
     </div>
     <div id="right-col" style="display: none;">
+    <div id="phone-sliders" style="gap:3px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Phone (Portrait)</div>
+      </div>
+      <div class="row"><label>Object size</label><input type="range" id="sPObj" min="40" max="100" step="1" value="100"><span id="vPObj">1.00</span></div>
+      <div class="row"><label>Planet size</label><input type="range" id="sPPlanet" min="50" max="250" step="5" value="100"><span id="vPPlanet">1.00</span></div>
+      <div class="row"><label>Horizon</label><input type="range" id="sPHorizon" min="50" max="95" step="1" value="75"><span id="vPHorizon">0.75</span></div>
+    </div>
     <div id="sliders">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="opacity:0.5;font-size:10px;text-transform:uppercase;letter-spacing:1px">Crust</div>
@@ -423,6 +431,24 @@ let W = NATIVE_W, H = NATIVE_H, R, CX, CY, currentDpr = 1;
 // portrait phones, where the canvas is wider than the screen and the sides are
 // cropped — effects anchored to the screen edges (side shadows) must use these.
 let visL = 0, visR = NATIVE_W;
+// ── Portrait (phone) proportion knobs ────────────────────────────────────────
+// On portrait phones the desktop-tuned pixel constants look too chunky relative
+// to the planet. Rather than retune every constant, three master knobs reshape
+// the whole scene (tuned live via the "Phone (portrait)" sliders, persisted in
+// localStorage; bake good values into the defaults below once found):
+//   P_OBJ     — on-screen size of ALL objects (tiles, grass, creature, sun,
+//               clouds). The scene renders to a bigger logical canvas and is
+//               CSS-shrunk by this factor. 1 = current look.
+//   P_PLANET  — planet's on-screen radius (curvature), independent of P_OBJ.
+//   P_HORIZON — vertical position of the planet surface (fraction of screen H).
+let P_OBJ = 1.0, P_PLANET = 1.0, P_HORIZON = 0.75;
+try {
+  const _pt = JSON.parse(localStorage.getItem('portraitTune') || '{}');
+  if (_pt.obj     > 0) P_OBJ     = _pt.obj;
+  if (_pt.planet  > 0) P_PLANET  = _pt.planet;
+  if (_pt.horizon > 0) P_HORIZON = _pt.horizon;
+} catch (e) { /* corrupted saved values — fall back to defaults */ }
+let cssScale = 1; // CSS transform scale chosen by layout() — the Pixi renderer matches its pixel density to this
 let rockCanvas = null, crustDotCanvas = null, coverSpotsCanvas = null;
 let lastR = null;
 let _skyGrad = null, _planetGrad = null;
@@ -430,21 +456,26 @@ const game = document.getElementById('game');
 function layout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  if (vh > vw && vw < 768) {
-    // Portrait phone: render at a fixed landscape size, scale to fill screen height,
-    // crop the sides. This gives a much bigger planet radius and more natural proportions.
-    const GAME_W = 760, GAME_H = vh;
-    W = GAME_W; H = GAME_H;
-    const scale = Math.max(vw / GAME_W, vh / GAME_H);
-    const offsetX = Math.round((vw - GAME_W * scale) / 2);
-    const offsetY = Math.round((vh - GAME_H * scale) / 2);
-    game.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-    // The sides of the 760px canvas are cropped off-screen — record where the
+  const isPortrait = vh > vw && vw < 768;
+  if (isPortrait) {
+    // Portrait phone: render to a logical canvas at least 760px wide, CSS-shrink
+    // it by P_OBJ, and crop the sides. Smaller P_OBJ = bigger logical canvas
+    // squeezed onto the same screen = everything looks smaller. The planet's
+    // on-screen radius is held constant by the R override below, so P_OBJ only
+    // changes how big objects look relative to the planet.
+    const s = P_OBJ;
+    W = Math.max(760, Math.ceil(vw / s));
+    H = Math.ceil(vh / s);
+    const offsetX = Math.round((vw - W * s) / 2);
+    game.style.transform = `translate(${offsetX}px, 0px) scale(${s})`;
+    cssScale = s;
+    // The sides of the logical canvas are cropped off-screen — record where the
     // visible window actually starts/ends in game coordinates.
-    visL = -offsetX / scale; visR = (vw - offsetX) / scale;
+    visL = -offsetX / s; visR = (vw - offsetX) / s;
   } else if (isMobile) {
     W = vw; H = vh;
     game.style.transform = 'translate(0px, 0px) scale(1)';
+    cssScale = 1;
     visL = 0; visR = W;
   } else {
     W = NATIVE_W; H = NATIVE_H;
@@ -452,6 +483,7 @@ function layout() {
     const tx = Math.round((vw - NATIVE_W * scale) / 2);
     const ty = Math.round((vh - NATIVE_H * scale) / 2);
     game.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    cssScale = 1; // desktop keeps full-density rendering even when CSS-scaled
     visL = 0; visR = W;
   }
   canvas.width  = W; canvas.height  = H;
@@ -461,11 +493,14 @@ function layout() {
   btfCanvas.width  = W; btfCanvas.height  = H;
   btfCanvas.style.width  = W + 'px'; btfCanvas.style.height  = H + 'px';
   game.style.width  = W + 'px'; game.style.height  = H + 'px';
-  R  = Math.round(675 * W / 760);
+  // Portrait: R is set from the planet-size knob and divided by the CSS scale so
+  // the on-screen radius (R × cssScale = 675 × P_PLANET) stays put when P_OBJ
+  // changes. At default knob values this equals the old formula exactly.
+  R  = isPortrait ? Math.round(675 * P_PLANET / P_OBJ) : Math.round(675 * W / 760);
   CX = W / 2;
   // Place planet so its top arc is always visible — on wide screens the horizon sits ~88px
   // below the screen edge; on narrow/portrait screens it clamps to keep the arc on screen.
-  CY = H * 0.75 + R;
+  CY = H * (isPortrait ? P_HORIZON : 0.75) + R;
   if (lastR && R !== lastR) {
     const scale = R / lastR;
     for (const c of clouds) c.radius *= scale;
@@ -811,6 +846,36 @@ document.getElementById('sGWWaveFreq')  .addEventListener('input', e => { GRASS_
 document.getElementById('sGWLeanSmooth').addEventListener('input', e => { LEAN_SMOOTH     = +e.target.value / 10;    document.getElementById('vGWLeanSmooth').textContent   = LEAN_SMOOTH.toFixed(1); });
 document.getElementById('sGWWindSens')  .addEventListener('input', e => { BLADE_WIND_SENS  = +e.target.value;          document.getElementById('vGWWindSens').textContent     = e.target.value; });
 document.getElementById('sWindSwipeStr').addEventListener('input', e => { WIND_SWIPE_STR  = +e.target.value / 1000;   document.getElementById('vWindSwipeStr').textContent   = WIND_SWIPE_STR.toFixed(3); });
+
+// Phone (portrait) proportion sliders — reshape the whole portrait layout live.
+// Values persist in localStorage so they survive reloads while tuning on a phone;
+// the Save button bakes them into the P_OBJ/P_PLANET/P_HORIZON defaults.
+let _pTuneTimer;
+function _applyPortraitTune() {
+  localStorage.setItem('portraitTune', JSON.stringify({ obj: P_OBJ, planet: P_PLANET, horizon: P_HORIZON }));
+  // Debounced: layout() rebakes the rock/crust/cover canvases — too heavy per input tick
+  clearTimeout(_pTuneTimer);
+  _pTuneTimer = setTimeout(() => {
+    window.layout();
+    _canvasRect = null; // pointer mapping caches the canvas rect — the transform just changed
+  }, 100);
+}
+document.getElementById('sPObj').addEventListener('input', e => {
+  P_OBJ = +e.target.value / 100; document.getElementById('vPObj').textContent = P_OBJ.toFixed(2); _applyPortraitTune();
+});
+document.getElementById('sPPlanet').addEventListener('input', e => {
+  P_PLANET = +e.target.value / 100; document.getElementById('vPPlanet').textContent = P_PLANET.toFixed(2); _applyPortraitTune();
+});
+document.getElementById('sPHorizon').addEventListener('input', e => {
+  P_HORIZON = +e.target.value / 100; document.getElementById('vPHorizon').textContent = P_HORIZON.toFixed(2); _applyPortraitTune();
+});
+// Sync slider positions with the values loaded from localStorage at startup
+document.getElementById('sPObj').value     = Math.round(P_OBJ * 100);
+document.getElementById('sPPlanet').value  = Math.round(P_PLANET * 100);
+document.getElementById('sPHorizon').value = Math.round(P_HORIZON * 100);
+document.getElementById('vPObj').textContent     = P_OBJ.toFixed(2);
+document.getElementById('vPPlanet').textContent  = P_PLANET.toFixed(2);
+document.getElementById('vPHorizon').textContent = P_HORIZON.toFixed(2);
 
 // ── TILES ─────────────────────────────────────────────────────────────────────
 function generateTiles() {
@@ -4722,6 +4787,9 @@ function saveDefaults() {
     ['sGWLeanSmooth', 'LEAN_SMOOTH',      LEAN_SMOOTH],
     ['sGWWindSens',   'BLADE_WIND_SENS',  BLADE_WIND_SENS],
     ['sWindSwipeStr', 'WIND_SWIPE_STR',   WIND_SWIPE_STR],
+    ['sPObj',     'P_OBJ',     P_OBJ],
+    ['sPPlanet',  'P_PLANET',  P_PLANET],
+    ['sPHorizon', 'P_HORIZON', P_HORIZON],
   ];
 
   let html = document.documentElement.outerHTML;
@@ -5877,7 +5945,10 @@ loop(performance.now());
     backgroundAlpha: 0,       // fully transparent — Canvas2D layers show through
     antialias:       false,   // sprites get smooth edges from texture filtering; MSAA only cost GPU fill rate
     autoDensity:     true,    // handles hi-DPI screens automatically
-    resolution:      window.devicePixelRatio || 1,
+    // cssScale: in portrait the canvas is CSS-shrunk by P_OBJ, so rendering at
+    // full devicePixelRatio would waste a huge off-screen buffer — render at
+    // exactly the density that reaches the screen instead.
+    resolution:      (window.devicePixelRatio || 1) * cssScale,
   });
 
   // DOM order: c (opacity:0, events) → PixiJS (world) → gc (tile numbers) → btf (butterflies)
@@ -5968,6 +6039,7 @@ loop(performance.now());
   const _origLayout = window.layout;
   window.layout = function() {
     _origLayout();
+    app.renderer.resolution = (window.devicePixelRatio || 1) * cssScale;
     app.renderer.resize(W, H);
     pc.style.width  = W + 'px';
     pc.style.height = H + 'px';
